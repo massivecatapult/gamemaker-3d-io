@@ -12,6 +12,8 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
     original_object = bpy.context.active_object
     
     #make sure only the active object is selected
+    #check this out? https://stackoverflow.com/questions/37335653/unable-to-completely-deselect-all-objects-in-blender-using-scripting-or-key-a
+    #try using bpy.data.objects?
     for i in bpy.context.selectable_objects:
         i.select_set(state = False)
     original_object.select_set(state = True)
