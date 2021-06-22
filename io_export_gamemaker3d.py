@@ -1,7 +1,7 @@
 bl_info = {
         "name": "Export for GameMaker (.gml)",
         "author": "Martin Crownover",
-        "version": (1, 6, 0),
+        "version": (1, 6, 1),
         "blender": (2, 7, 9),
         "location": "File > Export",
         "description": "Export 3D models for use GameMaker: Studio, as scripts, models, and raw comma-separated data",
@@ -10,7 +10,7 @@ bl_info = {
         "tracker_url": "http://martincrownover.com/blender-addon-gm3d",
         "category": "Import-Export"}
 
-'''
+"""
 Usage Notes:
     Build your 3D model, select it, then go to File > Export > GameMaker 3D.
     Set options as desired, export, and then if you export the object as:
@@ -26,21 +26,20 @@ Additional links:
 Additional credits:
     Jeff LaMarche {http://iphonedevelopment.blogspot.com}
     BenRK
-
-'''
+    Arnold Vermeulen
+"""
 
 import bpy
 from bpy.props import *
 import mathutils, math, struct
 import os
 from os import remove
-import time
 import bpy_extras
-from bpy_extras.io_utils import ExportHelper 
-import time
+from bpy_extras.io_utils import ExportHelper
 import shutil
 from math import radians
 
+#define the prepMech function, which copies the targeted object and performs operations on it to prepare it for export
 def prepMesh(object, apply_modifiers):
         #this function copies the current object, then cleans it up before returning it for export
         need_to_triangulate = False
@@ -86,10 +85,12 @@ def prepMesh(object, apply_modifiers):
                                 
         return object_copy
 
+#define the writeString function, which writes the indicated string to the target file
 def writeString(file, string):
         #a simple function for writing strings to an open file
         file.write(bytes(string, 'UTF-8'))
-        
+
+#define the do_export function, which runs prepMesh, performs a few other prep operations, and actually outputs the new file
 def do_export(context, props, filepath):
         #perform additional operations and export the object script for GameMaker
         
@@ -122,9 +123,16 @@ def do_export(context, props, filepath):
         #open the file for writing
         file = open(filepath, "wb")
         
+        #get script name from the filepath - may want to check if this is blank at some point int he future?
+        base_name = os.path.basename(filepath)
+        script_name = os.path.splitext(base_name)[0]
+                
         #branch the output here, depending on what the user wants to export
         if props.output_format == 'SCRIPT':
         #script output
+                #add extra text to the script if it's supposed to be importable
+                if props.make_importable:
+                        writeString(file, '#define scr_'+script_name+'\n\n')
                 #add extra variables to the script if we're using the alternate/realtive output style
                 if props.use_alt_export_style:
                         writeString(file, 'var temp, tx, ty, tz;\ntemp = argument0;\ntx = argument1;\nty = argument2;\ntz = argument3;\n')
@@ -361,15 +369,14 @@ def do_export(context, props, filepath):
 
 
 ###### EXPORT OPERATOR #######
+
 class Export_gm3d(bpy.types.Operator, ExportHelper):
-        '''Exports the active object as a GameMaker: Studio 3D model script'''
+        """Exports the active object as a GameMaker: Studio 3D model script"""
         bl_idname = "export.gml"
         bl_label = "Export for GameMaker"
         filename_ext = ".gml"
-        filter_glob = StringProperty(
-                default="*.gml",
-                options={'HIDDEN'}
-                )
+        
+        filter_glob = StringProperty(default="*.gml", options={'HIDDEN'})
 
         output_format = EnumProperty(name="Format",
           description="The format of the output script",
@@ -424,36 +431,20 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
                 return context.active_object.type in ['MESH', 'CURVE', 'SURFACE', 'FONT']
 
         def execute(self, context):
-                start_time = time.time()
-                print('\n_____START_____')
                 props = self.properties
                 filepath = self.filepath
                 filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
-
                 exported = do_export(context, props, filepath)
                 
                 if exported:
-                        print('finished export in %s seconds' %((time.time() - start_time)))
-                        print(filepath)
+                        print("GML script output to: " + filepath)
                         
                 return {'FINISHED'}
 
         def invoke(self, context, event):
-                wm = context.window_manager
-
-                if True:
-                        # File selector
-                        wm.fileselect_add(self) # will run self.execute()
-                        return {'RUNNING_MODAL'}
-                elif True:
-                        # search the enum
-                        wm.invoke_search_popup(self)
-                        return {'RUNNING_MODAL'}
-                elif False:
-                        # Redo popup
-                        return wm.invoke_props_popup(self, event) #
-                elif False:
-                        return self.execute(context)
+            wm = context.window_manager
+            wm.fileselect_add(self)
+            return {'RUNNING_MODAL'}
                         
         def draw(self, context):
                 layout = self.layout
@@ -470,7 +461,6 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
                         layout.prop(self,"use_alt_export_style")
                 elif self.output_format == 'MODEL':
                         layout.prop(self, "model_type")
-                        layout.prop(self, "make_importable")
                         layout.prop(self, "apply_modifiers")
                         layout.prop(self, "rot_x90")
                         layout.prop(self, "flip_y")
@@ -486,7 +476,7 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
                                 layout.prop(self, "flip_uvs")
                         layout.prop(self, "mod_scale")
 
-### REGISTER ###
+###### REGISTER ######
 
 def menu_func(self, context):
         self.layout.operator(Export_gm3d.bl_idname, text="GameMaker 3D (.gml)")
