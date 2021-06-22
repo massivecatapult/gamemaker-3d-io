@@ -1,11 +1,11 @@
 bl_info = {
         "name": "Export for GameMaker (.txt)",
         "author": "Martin Crownover",
-        "version": (1, 5, 8),
+        "version": (1, 5, 9),
         "blender": (2, 7, 8),
         "location": "File > Export",
         "description": "Export 3D models for use GameMaker: Studio, as scripts, models, and raw comma-separated data",
-        "warning": "This addon is currently in testing and has not yet been released for public use yet. Please do not distribute!",
+        "warning": "",
         "wiki_url": "",
         "tracker_url": "http://martincrownover.com/blender-addon-gm3d",
         "category": "Import-Export"}
@@ -227,6 +227,7 @@ def do_export(context, props, filepath):
                                 uv_layer = mesh.tessface_uv_textures.active
                                 for face in mesh.tessfaces:
                                         faceUV = uv_layer.data[face.index]
+                                        i=0
                                         for index in face.vertices:
                                                 if len(face.vertices) == 3:
                                                         vert = mesh.vertices[index]
@@ -240,6 +241,7 @@ def do_export(context, props, filepath):
                                                         model_output_string += '16777215     1'
                                                         model_output_string += '\n'
                                                         vert_count+=1
+                                                        i+=1
                         else:
                         #else if the model has no UV map
                                 uv_layer = mesh.tessface_uv_textures.active
