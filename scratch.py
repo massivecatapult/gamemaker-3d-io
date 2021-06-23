@@ -49,42 +49,44 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
     if flip_y:
         bpy.ops.transform.mirror(constraint_axis = (False, True, False))
         bpy.ops.object.transform_apply()
+        bpy.ops.object.mode_set(mode = 'EDIT')
+        bpy.ops.mesh.select_all(action = 'SELECT')
+        bpy.ops.mesh.flip_normals()
+        bpy.context.view_layer.update()
+        bpy.ops.object.mode_set(mode = 'OBJECT')
     
     #scale the object
     if scale_modifier != 1:
         bpy.ops.transform.resize(value = (scale_modifier, scale_modifier, scale_modifier))
         bpy.ops.object.transform_apply()
+
         
     #initialize vertex buffer output and grab object mesh and uv layers
-    vertex_output = ""
+    output = ""
     mesh = bpy.context.object.data
     uv_layer = mesh.uv_layers.active.data
+    
+    #if flip_y:
+        
     
     #iterate through the triangles of the mesh
     mesh.calc_loop_triangles()
     count = 0;
     for tri in mesh.loop_triangles:
         uvs = uv_layer[count].uv
-        vertex_output = vertex_output + "### triangle " + str(count) + "\n\n"
+        output += "\t//triangle " + str(count) + "\n\n"
         for vert_index in tri.vertices:
             vert = mesh.vertices[vert_index]
-            #vertex_output = vertex_output + str(mesh.vertices[vert_index].co)
-            vertex_output += "-# verts\n"
-            vertex_output += str(round(vert.co.x, 4)) + ", "
-            vertex_output += str(round(vert.co.y, 4)) + ", "
-            vertex_output += str(round(vert.co.z, 4)) + "\n"
-            
-            vertex_output += "-# normals\n"
-            vertex_output += str(round(vert.normal.x, 4)) + ", "
-            vertex_output += str(round(vert.normal.y, 4)) + ", "
-            vertex_output += str(round(vert.normal.z, 4)) + "\n"
-            
-            vertex_output += "-# uvs\n"
-            vertex_output += str(round(uvs[0], 4)) + ", "
-            vertex_output += str(round(uvs[1], 4)) + "\n\n"
-            
-        vertex_output = vertex_output + "\n"
+            output += "\tvertex_position_3d(buf, " + str(round(vert.co.x, 4)) + ", " + str(round(vert.co.y, 4)) + ", " + str(round(vert.co.z, 4)) + ");\n"
+            output += "\tvertex_normal(buf, " + str(round(vert.normal.x, 4)) + ", " + str(round(vert.normal.y, 4)) + ", " + str(round(vert.normal.z, 4)) + ");\n"
+            output += "\tvertex_color(buf, c_white, 1);\n"
+            output += "\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(uvs[1], 4)) + ");\n"
+        output += "\n"
         count += 1
+        
+    #add header and footer to file
+    output = "var buf = vertex_create_buffer();\nvertex_begin(buf, format);\n" + output
+    output += "vertex_end(buf);"
         
     #delete object copy and reselect original object
     bpy.ops.object.delete()
@@ -92,7 +94,7 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
     bpy.context.view_layer.objects.active = original_object
     
     f = open(filepath, 'w', encoding='utf-8')
-    f.write(vertex_output)
+    f.write(output)
     #f.write("Hello World %s" % use_some_setting)
     f.close()
 
