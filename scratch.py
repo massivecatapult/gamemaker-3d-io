@@ -12,8 +12,6 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
     original_object = bpy.context.active_object
     
     #make sure only the active object is selected
-    #check this out? https://stackoverflow.com/questions/37335653/unable-to-completely-deselect-all-objects-in-blender-using-scripting-or-key-a
-    #try using bpy.data.objects?
     for i in bpy.context.selectable_objects:
         i.select_set(state = False)
     original_object.select_set(state = True)
@@ -45,25 +43,58 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
     bpy.ops.object.mode_set(mode = 'OBJECT')
         
     #apply the object
-    bpy.ops.object.transform_apply(location = True, rotation = True, scale = True)
+    bpy.ops.object.transform_apply()
     
     #flip the object on the Y axis, if applicable
     if flip_y:
-        bpy.context.object.scale[1] = -1
-        bpy.ops.object.transform_apply(location = False, rotation = False, scale = True)
-        bpy.ops.object.mode_set(mode = 'EDIT')
-        bpy.ops.mesh.flip_normals()
-        bpy.ops.object.mode_set(mode = 'OBJECT')
-        
-        
-    #STOPPING HERE
-        
-        
+        bpy.ops.transform.mirror(constraint_axis = (False, True, False))
+        bpy.ops.object.transform_apply()
     
-    print("Fakie finished!")
-    #f = open(filepath, 'w', encoding='utf-8')
+    #scale the object
+    if scale_modifier != 1:
+        bpy.ops.transform.resize(value = (scale_modifier, scale_modifier, scale_modifier))
+        bpy.ops.object.transform_apply()
+        
+    #initialize vertex buffer output and grab object mesh and uv layers
+    vertex_output = ""
+    mesh = bpy.context.object.data
+    uv_layer = mesh.uv_layers.active.data
+    
+    #iterate through the triangles of the mesh
+    mesh.calc_loop_triangles()
+    count = 0;
+    for tri in mesh.loop_triangles:
+        uvs = uv_layer[count].uv
+        vertex_output = vertex_output + "### triangle " + str(count) + "\n\n"
+        for vert_index in tri.vertices:
+            vert = mesh.vertices[vert_index]
+            #vertex_output = vertex_output + str(mesh.vertices[vert_index].co)
+            vertex_output += "-# verts\n"
+            vertex_output += str(round(vert.co.x, 4)) + ", "
+            vertex_output += str(round(vert.co.y, 4)) + ", "
+            vertex_output += str(round(vert.co.z, 4)) + "\n"
+            
+            vertex_output += "-# normals\n"
+            vertex_output += str(round(vert.normal.x, 4)) + ", "
+            vertex_output += str(round(vert.normal.y, 4)) + ", "
+            vertex_output += str(round(vert.normal.z, 4)) + "\n"
+            
+            vertex_output += "-# uvs\n"
+            vertex_output += str(round(uvs[0], 4)) + ", "
+            vertex_output += str(round(uvs[1], 4)) + "\n\n"
+            
+        vertex_output = vertex_output + "\n"
+        count += 1
+        
+    #delete object copy and reselect original object
+    bpy.ops.object.delete()
+    original_object.select_set(state = True)
+    bpy.context.view_layer.objects.active = original_object
+    
+    f = open(filepath, 'w', encoding='utf-8')
+    f.write(vertex_output)
     #f.write("Hello World %s" % use_some_setting)
-    #f.close()
+    f.close()
 
     return {'FINISHED'}
 
