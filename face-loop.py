@@ -8,3 +8,4 @@
             output += str("Loop Vert: (%f,%f,%f)" % vert.co[:]) + "\n"
             normal = vert.normal
             output += str("Loop Normal: (%f,%f,%f)" % normal[:]) + "\n\n"
+

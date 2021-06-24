@@ -1,4 +1,5 @@
 import bpy
+import bmesh
 
 def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
     
@@ -65,45 +66,63 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     use_uv_layer = False;
     use_vert_colors = False;
     
-    #grab object mesh, uv layers, and vertex color data - if they are available
+    #grab object mesh, and convert to bmesh
     mesh = bpy.context.object.data
-    if mesh.uv_layers:
-        uv_layer = mesh.uv_layers.active.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    
+    #get uv active layout, if there is one
+    uv_layer = bm.loops.layers.uv.active
+    if uv_layer:
         use_uv_layer = True
-    if mesh.vertex_colors:
-        color_layer = mesh.vertex_colors.active.data
+    
+    #get vertex colors, if there are any
+    vert_colors = bm.loops.layers.color.active
+    if vert_colors:
         use_vert_colors = True
     
-    #iterate through the triangles of the mesh
-    mesh.calc_loop_triangles()
+    #set counter
     count = 0;
-    for tri in mesh.loop_triangles:
+    
+    #iterate through the faces of the mesh
+    for face in bm.faces:
         output += "\t\t//triangle " + str(count) + "\n"
-        for vert_index in tri.vertices:
-            vert = mesh.vertices[vert_index]
-            output += "\t\tvertex_position_3d(buf, " + str(round(vert.co.x, 4)) + ", " + str(round(vert.co.y, 4)) + ", " + str(round(vert.co.z, 4)) + ");\n"
-            output += "\t\tvertex_normal(buf, " + str(round(vert.normal.x, 4)) + ", " + str(round(vert.normal.y, 4)) + ", " + str(round(vert.normal.z, 4)) + ");\n"
-            if use_vert_colors:
-                color = color_layer[vert_index].color
-                output += "\t\tvertex_color(buf, make_color_rgb(" + str(round(color[0], 4)) + ", " + str(round(color[1], 4)) + ", " + str(round(color[2], 4)) + "), 1);\n"
+        for loop in face.loops:
+            if output_type == 'vertex_buffer':
+                #vertex buffer output
+                output += "test"
+                ###
             else:
-                output += "\t\tvertex_color(buf, c_white, 1);\n"
-            if use_uv_layer:
-                #uvs = uv_layer[vert_index].uv
-                uvs = uv_layer[vert_index].uv
-                output += "\t\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(uvs[1], 4)) + ");\n"
-            else:
-                output += "\t\tvertex_texcoord(buf, 0, 0);\n"
+                #debug output to GML script
+                vert = loop.vert
+                output += "\t\tvertex_position_3d(buf, " + str(round(vert.co.x, 4)) + ", " + str(round(vert.co.y, 4)) + ", " + str(round(vert.co.z, 4)) + ");\n"
+                output += "\t\tvertex_normal(buf, " + str(round(vert.normal.x, 4)) + ", " + str(round(vert.normal.y, 4)) + ", " + str(round(vert.normal.z, 4)) + ");\n"
+                if use_vert_colors:
+                    colors = loop[vert_colors]
+                    colors = [int(round(c * 255)) for c in colors]
+                    output += "\t\tvertex_color(buf, make_color_rgb(" + str(colors[0]) + ", " + str(colors[1]) + ", " + str(colors[2]) + "), 1);\n"
+                else:
+                    output += "\t\tvertex_color(buf, c_white, 1);\n"
+                if use_uv_layer:
+                    uvs = loop[uv_layer].uv
+                    if flip_uvs:
+                        output += "\t\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(1 - uvs[1], 4)) + ");\n"
+                    else:
+                        output += "\t\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(uvs[1], 4)) + ");\n"
+                else :
+                    output += "\t\tvertex_texcoord(buf, 0, 0);\n"
+                ###
         output += "\n"
         count += 1
-    
+
+
     #add header and footer to file
-    
     header = "function load_model(format){\n\n\t/*\n\tuse the following format to load this model:\n\tvertex_format_begin();\n\t\tvertex_format_add_position_3d();\n\t\tvertex_format_add_normal();\n\t\tvertex_format_add_color();\n\t\tvertex_format_add_texcoord();\n\tvar fmt = vertex_format_end();\n\t*/\n\n"
     output = header + "\tvar buf = vertex_create_buffer();\n\tvertex_begin(buf, format);\n\n" + output
     output += "\tvertex_end(buf);\n\n\treturn buf;\n}"
-        
-    #delete object copy and reselect original object
+
+    #delete object copy and bmesh, and reselect original object
+    bm.free()
     bpy.ops.object.delete()
     original_object.select_set(state = True)
     bpy.context.view_layer.objects.active = original_object
@@ -173,10 +192,10 @@ class ExportSomeData(Operator, ExportHelper):
         name="Output Type",
         description="The type of data to output",
         items=(
-            ('OPT_A', "Vertex Buffer", "A vertex buffer that can be loaded into GameMaker at runtime"),
-            ('OPT_B', "GML Script (debug)", "A human-readable script that can be used to import and debug"),
+            ('vertex_buffer', "Vertex Buffer", "A vertex buffer that can be loaded into GameMaker at runtime"),
+            ('debug', "GML Script (debug)", "A human-readable script that can be used to import and debug"),
         ),
-        default='OPT_A',
+        default='vertex_buffer',
     )
     
     def execute(self, context):
