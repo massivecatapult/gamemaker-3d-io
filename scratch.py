@@ -14,9 +14,8 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     original_object = bpy.context.active_object
     
     #make sure only the active object is selected
-    for i in bpy.context.selectable_objects:
-        i.select_set(state = False)
-    original_object.select_set(state = True)
+    bpy.ops.object.select_all(action = 'DESELECT')
+    original_object.select_set(True)
     
     #make a temporary copy of the object to operate on
     temp_object = original_object.copy()
@@ -24,23 +23,18 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     view_layer.active_layer_collection.collection.objects.link(temp_object)
     
     #perform the selection routine once more, and make the new object the active one
-    for i in bpy.context.selectable_objects:
-        i.select_set(state = False)
-    temp_object.select_set(state = True)
+    bpy.ops.object.select_all(action = 'DESELECT')
+    temp_object.select_set(True)
     bpy.context.view_layer.objects.active = temp_object
     
     #apply modifiers, if applicable
     if apply_modifiers:
         bpy.ops.object.convert(target = 'MESH')
     
-    #switch to EDIT mode
+    #triangulate
     bpy.ops.object.mode_set(mode = 'EDIT')
     bpy.ops.mesh.select_all(action = 'SELECT')
-
-    #triangulate
     bpy.ops.mesh.quads_convert_to_tris()
-
-    #update the scene with our changes, then reset to OBJECT mode
     bpy.context.view_layer.update()
     bpy.ops.object.mode_set(mode = 'OBJECT')
         
@@ -62,11 +56,6 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
         bpy.ops.transform.resize(value = (scale_modifier, scale_modifier, scale_modifier))
         bpy.ops.object.transform_apply(location = use_world_origin, rotation = True, scale = True)
 
-    #initialize vertex buffer output
-    output = ""
-    use_uv_layer = False;
-    use_vert_colors = False;
-    
     #grab object mesh, and convert to bmesh
     mesh = bpy.context.object.data
     bm = bmesh.new()
@@ -74,19 +63,14 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     
     #get uv active layout, if there is one
     uv_layer = bm.loops.layers.uv.active
-    if uv_layer:
-        use_uv_layer = True
+    use_uv_layer = True if uv_layer else False
     
     #get vertex colors, if there are any
     vert_colors = bm.loops.layers.color.active
-    if vert_colors:
-        use_vert_colors = True
-    
-    #initialize output data
-    output_data = []
-    
+    use_vert_colors = True if vert_colors else False
+        
     #iterate through the faces of the mesh and grab data for each point
-    #count = 0;
+    output_data = []
     for face in bm.faces:
         for loop in face.loops:
             point = {}
@@ -108,11 +92,17 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
         
     if output_type == 'vertex_buffer':
         #vertex buffer output
-        output += "test"
-        ###end loop
+        output_list = []
+        for p in output_data:
+            output_list.append(struct.pack("fff", p.get("vertices")[0], p.get("vertices")[1], p.get("vertices")[2]))
+            output_list.append(struct.pack("fff", p.get("normals")[0], p.get("normals")[1], p.get("normals")[2]))
+            output_list.append(struct.pack("BBBB", p.get("colors")[0], p.get("colors")[1], p.get("colors")[2], 255))
+            output_list.append(struct.pack("ff", p.get("uvs")[0], p.get("uvs")[1]))
+        output = b"".join(output_list)
+
     else:
         #debug output to GML script
-        #set counter
+        output = ""
         count = 0;
         for p in output_data:
             if count % 3 == 0:
@@ -123,10 +113,7 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
                 output += "\t\tvertex_color(buf, make_color_rgb(" + str(p.get("colors")[0]) + ", " + str(p.get("colors")[1]) + ", " + str(p.get("colors")[2]) + "), 1);\n"
             else:
                 output += "\t\tvertex_color(buf, c_white, 1);\n"
-            if use_uv_layer:
-                output += "\t\tvertex_texcoord(buf, " + str(p.get("uvs")[0]) + ", " + str(p.get("uvs")[1]) + ");\n"
-            else:
-                output += "\t\tvertex_texcoord(buf, 0, 0);\n"
+            output += "\t\tvertex_texcoord(buf, " + str(p.get("uvs")[0]) + ", " + str(p.get("uvs")[1]) + ");\n"
             if (count + 1) % 3 == 0:
                 output += "\n"
             count += 1
@@ -135,17 +122,18 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
         output = header + "\tvar buf = vertex_create_buffer();\n\tvertex_begin(buf, format);\n\n" + output
         output += "\tvertex_end(buf);\n\n\treturn buf;\n}"
 
-
-
     #delete object copy and bmesh, and reselect original object
     bm.free()
     bpy.ops.object.delete()
     original_object.select_set(state = True)
     bpy.context.view_layer.objects.active = original_object
     
-    f = open(filepath, 'w', encoding='utf-8')
+    #output the data
+    if output_type == 'vertex_buffer':
+        f = open(filepath, 'wb')
+    else:
+        f = open(filepath, 'w', encoding='utf-8')
     f.write(output)
-    #f.write("Hello World %s" % use_some_setting)
     f.close()
 
     return {'FINISHED'}
