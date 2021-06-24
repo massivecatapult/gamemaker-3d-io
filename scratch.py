@@ -1,5 +1,6 @@
 import bpy
 import bmesh
+import struct
 
 def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
     
@@ -81,45 +82,60 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     if vert_colors:
         use_vert_colors = True
     
-    #set counter
-    count = 0;
+    #initialize output data
+    output_data = []
     
-    #iterate through the faces of the mesh
+    #iterate through the faces of the mesh and grab data for each point
+    #count = 0;
     for face in bm.faces:
-        output += "\t\t//triangle " + str(count) + "\n"
         for loop in face.loops:
-            if output_type == 'vertex_buffer':
-                #vertex buffer output
-                output += "test"
-                ###
+            point = {}
+            point["vertices"] = [round(v, 4) for v in loop.vert.co]
+            point["normals"] = [round(n, 4) for n in loop.vert.normal]
+            if use_vert_colors:
+                #colors = loop[vert_colors]
+                point["colors"] = [int(round(c * 255)) for c in loop[vert_colors]]
             else:
-                #debug output to GML script
-                vert = loop.vert
-                output += "\t\tvertex_position_3d(buf, " + str(round(vert.co.x, 4)) + ", " + str(round(vert.co.y, 4)) + ", " + str(round(vert.co.z, 4)) + ");\n"
-                output += "\t\tvertex_normal(buf, " + str(round(vert.normal.x, 4)) + ", " + str(round(vert.normal.y, 4)) + ", " + str(round(vert.normal.z, 4)) + ");\n"
-                if use_vert_colors:
-                    colors = loop[vert_colors]
-                    colors = [int(round(c * 255)) for c in colors]
-                    output += "\t\tvertex_color(buf, make_color_rgb(" + str(colors[0]) + ", " + str(colors[1]) + ", " + str(colors[2]) + "), 1);\n"
-                else:
-                    output += "\t\tvertex_color(buf, c_white, 1);\n"
-                if use_uv_layer:
-                    uvs = loop[uv_layer].uv
-                    if flip_uvs:
-                        output += "\t\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(1 - uvs[1], 4)) + ");\n"
-                    else:
-                        output += "\t\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(uvs[1], 4)) + ");\n"
-                else :
-                    output += "\t\tvertex_texcoord(buf, 0, 0);\n"
-                ###
-        output += "\n"
-        count += 1
+                point["colors"] = [255, 255, 255]
+            if use_uv_layer:
+                #uvs = loop[uv_layer].uv
+                point["uvs"] = [round(u, 4) for u in loop[uv_layer].uv]
+                if flip_uvs:
+                    point["uvs"][1] = round(1 - loop[uv_layer].uv[1], 4)
+            else:
+                point["uvs"] = [0, 0]
+            output_data.append(point)
+        
+    if output_type == 'vertex_buffer':
+        #vertex buffer output
+        output += "test"
+        ###end loop
+    else:
+        #debug output to GML script
+        #set counter
+        count = 0;
+        for p in output_data:
+            if count % 3 == 0:
+                output += "\t\t//triangle " + str(count // 3) + "\n"
+            output += "\t\tvertex_position_3d(buf, " + str(p.get("vertices")[0]) + ", " + str(p.get("vertices")[1]) + ", " + str(p.get("vertices")[2]) + ");\n"
+            output += "\t\tvertex_normal(buf, " + str(p.get("normals")[0]) + ", " + str(p.get("normals")[1]) + ", " + str(p.get("normals")[2]) + ");\n"
+            if use_vert_colors:
+                output += "\t\tvertex_color(buf, make_color_rgb(" + str(p.get("colors")[0]) + ", " + str(p.get("colors")[1]) + ", " + str(p.get("colors")[2]) + "), 1);\n"
+            else:
+                output += "\t\tvertex_color(buf, c_white, 1);\n"
+            if use_uv_layer:
+                output += "\t\tvertex_texcoord(buf, " + str(p.get("uvs")[0]) + ", " + str(p.get("uvs")[1]) + ");\n"
+            else:
+                output += "\t\tvertex_texcoord(buf, 0, 0);\n"
+            if (count + 1) % 3 == 0:
+                output += "\n"
+            count += 1
+        #add header and footer to file
+        header = "function load_model(format){\n\n\t/*\n\tuse the following format to load this model:\n\tvertex_format_begin();\n\t\tvertex_format_add_position_3d();\n\t\tvertex_format_add_normal();\n\t\tvertex_format_add_color();\n\t\tvertex_format_add_texcoord();\n\t vertex_format = vertex_format_end();\n\t*/\n\n"
+        output = header + "\tvar buf = vertex_create_buffer();\n\tvertex_begin(buf, format);\n\n" + output
+        output += "\tvertex_end(buf);\n\n\treturn buf;\n}"
 
 
-    #add header and footer to file
-    header = "function load_model(format){\n\n\t/*\n\tuse the following format to load this model:\n\tvertex_format_begin();\n\t\tvertex_format_add_position_3d();\n\t\tvertex_format_add_normal();\n\t\tvertex_format_add_color();\n\t\tvertex_format_add_texcoord();\n\tvar fmt = vertex_format_end();\n\t*/\n\n"
-    output = header + "\tvar buf = vertex_create_buffer();\n\tvertex_begin(buf, format);\n\n" + output
-    output += "\tvertex_end(buf);\n\n\treturn buf;\n}"
 
     #delete object copy and bmesh, and reselect original object
     bm.free()
@@ -140,7 +156,7 @@ from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
 
-class ExportSomeData(Operator, ExportHelper):
+class ExportData(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "export.gml"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Export"
@@ -203,16 +219,16 @@ class ExportSomeData(Operator, ExportHelper):
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
-    self.layout.operator(ExportSomeData.bl_idname, text="Export GameMaker 3D (*.gml)")
+    self.layout.operator(ExportData.bl_idname, text="Export GameMaker 3D (*.gml)")
 
 
 def register():
-    bpy.utils.register_class(ExportSomeData)
+    bpy.utils.register_class(ExportData)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 
 def unregister():
-    bpy.utils.unregister_class(ExportSomeData)
+    bpy.utils.unregister_class(ExportData)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
