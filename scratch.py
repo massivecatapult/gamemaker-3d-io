@@ -1,6 +1,6 @@
 import bpy
 
-def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modifier):
+def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
     
     #make sure we're in OBJECT mode
     bpy.ops.object.mode_set(mode = 'OBJECT')
@@ -43,12 +43,12 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
     bpy.ops.object.mode_set(mode = 'OBJECT')
         
     #apply the object
-    bpy.ops.object.transform_apply()
+    bpy.ops.object.transform_apply(location = use_world_origin, rotation = True, scale = True)
     
     #flip the object on the Y axis, if applicable
     if flip_y:
         bpy.ops.transform.mirror(constraint_axis = (False, True, False))
-        bpy.ops.object.transform_apply()
+        bpy.ops.object.transform_apply(location = use_world_origin, rotation = True, scale = True)
         bpy.ops.object.mode_set(mode = 'EDIT')
         bpy.ops.mesh.select_all(action = 'SELECT')
         bpy.ops.mesh.flip_normals()
@@ -58,35 +58,50 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
     #scale the object
     if scale_modifier != 1:
         bpy.ops.transform.resize(value = (scale_modifier, scale_modifier, scale_modifier))
-        bpy.ops.object.transform_apply()
+        bpy.ops.object.transform_apply(location = use_world_origin, rotation = True, scale = True)
 
-        
-    #initialize vertex buffer output and grab object mesh and uv layers
+    #initialize vertex buffer output
     output = ""
-    mesh = bpy.context.object.data
-    uv_layer = mesh.uv_layers.active.data
+    use_uv_layer = False;
+    use_vert_colors = False;
     
-    #if flip_y:
-        
+    #grab object mesh, uv layers, and vertex color data - if they are available
+    mesh = bpy.context.object.data
+    if mesh.uv_layers:
+        uv_layer = mesh.uv_layers.active.data
+        use_uv_layer = True
+    if mesh.vertex_colors:
+        color_layer = mesh.vertex_colors.active.data
+        use_vert_colors = True
     
     #iterate through the triangles of the mesh
     mesh.calc_loop_triangles()
     count = 0;
     for tri in mesh.loop_triangles:
-        uvs = uv_layer[count].uv
-        output += "\t//triangle " + str(count) + "\n\n"
+        output += "\t\t//triangle " + str(count) + "\n"
         for vert_index in tri.vertices:
             vert = mesh.vertices[vert_index]
-            output += "\tvertex_position_3d(buf, " + str(round(vert.co.x, 4)) + ", " + str(round(vert.co.y, 4)) + ", " + str(round(vert.co.z, 4)) + ");\n"
-            output += "\tvertex_normal(buf, " + str(round(vert.normal.x, 4)) + ", " + str(round(vert.normal.y, 4)) + ", " + str(round(vert.normal.z, 4)) + ");\n"
-            output += "\tvertex_color(buf, c_white, 1);\n"
-            output += "\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(uvs[1], 4)) + ");\n"
+            output += "\t\tvertex_position_3d(buf, " + str(round(vert.co.x, 4)) + ", " + str(round(vert.co.y, 4)) + ", " + str(round(vert.co.z, 4)) + ");\n"
+            output += "\t\tvertex_normal(buf, " + str(round(vert.normal.x, 4)) + ", " + str(round(vert.normal.y, 4)) + ", " + str(round(vert.normal.z, 4)) + ");\n"
+            if use_vert_colors:
+                color = color_layer[vert_index].color
+                output += "\t\tvertex_color(buf, make_color_rgb(" + str(round(color[0], 4)) + ", " + str(round(color[1], 4)) + ", " + str(round(color[2], 4)) + "), 1);\n"
+            else:
+                output += "\t\tvertex_color(buf, c_white, 1);\n"
+            if use_uv_layer:
+                #uvs = uv_layer[vert_index].uv
+                uvs = uv_layer[vert_index].uv
+                output += "\t\tvertex_texcoord(buf, " + str(round(uvs[0], 4)) + ", " + str(round(uvs[1], 4)) + ");\n"
+            else:
+                output += "\t\tvertex_texcoord(buf, 0, 0);\n"
         output += "\n"
         count += 1
-        
+    
     #add header and footer to file
-    output = "var buf = vertex_create_buffer();\nvertex_begin(buf, format);\n" + output
-    output += "vertex_end(buf);"
+    
+    header = "function load_model(format){\n\n\t/*\n\tuse the following format to load this model:\n\tvertex_format_begin();\n\t\tvertex_format_add_position_3d();\n\t\tvertex_format_add_normal();\n\t\tvertex_format_add_color();\n\t\tvertex_format_add_texcoord();\n\tvar fmt = vertex_format_end();\n\t*/\n\n"
+    output = header + "\tvar buf = vertex_create_buffer();\n\tvertex_begin(buf, format);\n\n" + output
+    output += "\tvertex_end(buf);\n\n\treturn buf;\n}"
         
     #delete object copy and reselect original object
     bpy.ops.object.delete()
@@ -100,13 +115,11 @@ def export_gm3d(context, filepath, apply_modifiers, flip_y, flip_uvs, scale_modi
 
     return {'FINISHED'}
 
-
 # ExportHelper is a helper class, defines filename and
 # invoke() function which calls the file selector.
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
-
 
 class ExportSomeData(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
@@ -124,6 +137,12 @@ class ExportSomeData(Operator, ExportHelper):
 
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
+    use_world_origin: BoolProperty(
+        name="Use World Origin",
+        description="Applies the position of the model relative to the world origin before exporting",
+        default=True,
+    )
+    
     apply_modifiers: BoolProperty(
         name="Apply Modifiers",
         description="Apply modifiers to the mesh before exporting",
@@ -131,13 +150,13 @@ class ExportSomeData(Operator, ExportHelper):
     )
     
     flip_y: BoolProperty(
-        name="Flip on Y",
+        name="Flip On Y",
         description="Flips the mesh on the Y axis",
         default=True,
     )
     
     flip_uvs: BoolProperty(
-        name="Flip UV coordinates",
+        name="Flip UV Coordinates",
         description="Flips the UV coordinates on the Y axis",
         default=True,
     )
@@ -150,9 +169,18 @@ class ExportSomeData(Operator, ExportHelper):
         soft_min=0.01,
     )
     
+    output_type: EnumProperty(
+        name="Output Type",
+        description="The type of data to output",
+        items=(
+            ('OPT_A', "Vertex Buffer", "A vertex buffer that can be loaded into GameMaker at runtime"),
+            ('OPT_B', "GML Script (debug)", "A human-readable script that can be used to import and debug"),
+        ),
+        default='OPT_A',
+    )
+    
     def execute(self, context):
-        return export_gm3d(context, self.filepath, self.apply_modifiers, self.flip_y, self.flip_uvs, self.scale_modifier)
-
+        return export_gm3d(context, self.filepath, self.use_world_origin, self.apply_modifiers, self.flip_y, self.flip_uvs, self.scale_modifier, self.output_type)
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
@@ -167,7 +195,6 @@ def register():
 def unregister():
     bpy.utils.unregister_class(ExportSomeData)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
-
 
 if __name__ == "__main__":
     register()
