@@ -1,263 +1,298 @@
+# Copyright 2021 Martin Crownover.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Portions of this software are based on the work of The glTF-Blender-IO
+# authors. glTF-Blender-IO is licensed and available under the Apache
+# License, Version 2.0.
+
 bl_info = {
-    "name": "Export for GameMaker (.gml)",
-    "author": "Martin Crownover",
-    "version": (1, 6, 5),
-    "blender": (2, 93, 0),
-    "location": "File > Export",
-    "description": "Export 3D models for use GameMaker: Studio 2, as scripts, models, and raw comma-separated data",
-    "warning": "",
-    "wiki_url": "",
-    "tracker_url": "http://martincrownover.com/blender-addon-gm3d",
-    "category": "Import-Export"
+    'name': 'GameMaker Studio 2 3D format',
+    'author': 'Martin Crownover',
+    "version": (2, 0, 0),
+    'blender': (2, 93, 0),
+    'location': 'File > Export',
+    'description': 'Export as GameMaker Studio 2 3D',
+    'warning': '',
+    'doc_url': "https://martincrownover.com/blender-addon-gm3d/",
+    'tracker_url': "https://github.com/massivecatapult/gamemaker-3d-io",
+    'support': 'OFFICIAL',
+    'category': 'Import-Export',
 }
 
 import bpy
-from bpy.props import *
-import mathutils, math, struct
-import os
-#from os import remove
-#import bpy_extras
-from bpy_extras.io_utils import ExportHelper
-#import shutil
-from math import radians
+import bmesh
+import struct
 
-#define the prepMech function, which copies the targeted object and performs operations on it to prepare it for export
-def prepMesh(object, apply_modifiers):
-    #this function copies the current object, then cleans it up before returning it for export
-    need_to_triangulate = False
-
-    #enter object mode and deselect all other objects
+def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
+    
+    # Make sure we're in OBJECT mode
     bpy.ops.object.mode_set(mode = 'OBJECT')
-    for i in bpy.context.scene.objects: i.select = False
-    object.select = True
-    bpy.context.scene.objects.active = object
-
-    #copy the object and its data so that we don't perform any permanent operations on the original model
-    object_copy = object.copy()
-    object_copy.data = object.data.copy()
-    bpy.context.scene.objects.link(object_copy)
-
-    #deselect all again and then set the object copy to be the selected object
-    for i in bpy.context.scene.objects: i.select = False
-    object_copy.select = True
-    bpy.context.scene.objects.active = object_copy
-
-    #apply all modifiers, if requested
+    
+    # Get the view layer
+    view_layer = bpy.context.view_layer
+    
+    # Mark the original object
+    original_object = bpy.context.active_object
+    
+    # Make sure only the active object is selected
+    bpy.ops.object.select_all(action = 'DESELECT')
+    original_object.select_set(True)
+    
+    # Make a temporary copy of the object to operate on
+    temp_object = original_object.copy()
+    temp_object.data = original_object.data.copy()
+    view_layer.active_layer_collection.collection.objects.link(temp_object)
+    
+    # Perform the selection routine once more, and make the new object the active one
+    bpy.ops.object.select_all(action = 'DESELECT')
+    temp_object.select_set(True)
+    bpy.context.view_layer.objects.active = temp_object
+    
+    # Apply modifiers, if applicable
     if apply_modifiers:
         bpy.ops.object.convert(target = 'MESH')
-
-    #check to see if the object needs to have quads converted to triangles
-    object.data.update(calc_tessface=True)
-    for face in object.data.tessfaces:
-        if (len(face.vertices) > 3):
-            need_to_triangulate = True
-            break
         
-    #enter edit mode and select all verts
-    bpy.ops.object.mode_set(mode = 'EDIT')
-    bpy.ops.mesh.select_all(action = 'SELECT')
-
-    #if we need to triangulate the object, do it now
-    if need_to_triangulate == True:
-            bpy.ops.mesh.quads_convert_to_tris()
-            
-    #update the scene to reflect the changes we've made, then enter object mode again
-    bpy.context.scene.update()
-    bpy.ops.object.mode_set(mode = 'OBJECT') # set it in object
-                            
-    return object_copy
-
-#define the writeString function, which writes the indicated string to the target file
-def writeString(file, string):
-    #a simple function for writing strings to an open file
-    file.write(bytes(string, 'UTF-8'))
-
-#define the do_export function, which runs prepMesh, performs a few other prep operations, and actually outputs the new file
-def do_export(context, props, filepath):
-    #perform additional operations and export the object script for GameMaker
-
-    #run the prepMesh function on the object, optionally applying all modifiers
-    object_original = context.active_object
-    object_copy = prepMesh(object_original, props.apply_modifiers)
-
-    #apply the object in its current state
-    bpy.ops.object.transform_apply(location = True, rotation = True, scale = True)
-        
-    #if we want to flip the object on its Y axis, do it now, then apply the model and flip the normals
-    if props.flip_y:
-        bpy.context.object.scale[1] = -1
-        bpy.ops.object.transform_apply(location = False, rotation = False, scale = True)
+    # Apply the object
+    bpy.ops.object.transform_apply(location = use_world_origin, rotation = True, scale = True)
+    
+    # Flip the object on the Y axis, if applicable
+    if flip_y:
+        bpy.ops.transform.mirror(constraint_axis = (False, True, False))
+        bpy.ops.object.transform_apply(location = use_world_origin, rotation = True, scale = True)
         bpy.ops.object.mode_set(mode = 'EDIT')
+        bpy.ops.mesh.select_all(action = 'SELECT')
         bpy.ops.mesh.flip_normals()
+        bpy.context.view_layer.update()
         bpy.ops.object.mode_set(mode = 'OBJECT')
+    
+    # Scale the object
+    if scale_modifier != 1:
+        bpy.ops.transform.resize(value = (scale_modifier, scale_modifier, scale_modifier))
+        bpy.ops.object.transform_apply(location = use_world_origin, rotation = True, scale = True)
 
-    #STOPPING HERE
-
-    #grab mesh data for further operations
-    mesh = object_copy.to_mesh(context.scene, False, 'PREVIEW')
-
-    #if we want to rotate the object 90 degrees on the X axis, do it now
-    if props.rot_x90:
-        mesh.transform(mathutils.Matrix.Rotation(radians(90.0), 4, 'X'))
-        #should consider doing this like the Y flip in the future
-
-    #if we want to adjust the scale of the object before output, do it now
-    mesh.transform(mathutils.Matrix.Scale(props.mod_scale, 4))
-
-    #open the file for writing
-    file = open(filepath, "wb")
-
-    #get script name from the filepath - may want to check if this is blank at some point in t  future?
-    base_name = os.path.basename(filepath)
-    script_name = os.path.splitext(base_name)[0]
-                
-    #add extra variables to the script if we're using the alternate/realtive output style
-    #writeString(file, 'var temp = d3d_model_create();\n')
+    # Grab object mesh, and convert to bmesh
+    mesh = bpy.context.object.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    
+    # Triangulate
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])
+    
+    # Get uv active layout, if there is one
+    uv_layer = bm.loops.layers.uv.active
+    use_uv_layer = True if uv_layer else False
+    
+    # Get vertex colors, if there are any
+    vert_colors = bm.loops.layers.color.active
+    use_vert_colors = True if vert_colors else False
         
-    #start writing the mesh data to the file
+    # Iterate through the faces of the mesh and grab data for each point
+    output_data = []
+    for face in bm.faces:
+        for loop in face.loops:
+            point = {}
+            point["vertices"] = [round(v, 4) for v in loop.vert.co]
+            point["normals"] = [round(n, 4) for n in loop.vert.normal]
+            if use_vert_colors:
+                point["colors"] = [int(round(c * 255)) for c in loop[vert_colors]]
+            else:
+                point["colors"] = [255, 255, 255]
+            if use_uv_layer:
+                point["uvs"] = [round(u, 4) for u in loop[uv_layer].uv]
+                if flip_uvs:
+                    point["uvs"][1] = round(1 - loop[uv_layer].uv[1], 4)
+            else:
+                point["uvs"] = [0, 0]
+            output_data.append(point)
+        
+    if output_type == 'vertex_buffer':
+        # Vertex buffer output
+        output_list = []
+        for p in output_data:
+            output_list.append(struct.pack("fff", p.get("vertices")[0], p.get("vertices")[1], p.get("vertices")[2]))
+            output_list.append(struct.pack("fff", p.get("normals")[0], p.get("normals")[1], p.get("normals")[2]))
+            output_list.append(struct.pack("BBBB", p.get("colors")[0], p.get("colors")[1], p.get("colors")[2], 255))
+            output_list.append(struct.pack("ff", p.get("uvs")[0], p.get("uvs")[1]))
+        output = b"".join(output_list)
 
-    writeString(file, 'd3d_model_primitive_begin(temp,pr_trianglelist);\n')
-    if len(mesh.uv_textures) > 0:
-    #if the model has a UV map
-        uv_layer = mesh.tessface_uv_textures.active
-        for face in mesh.tessfaces:
-            faceUV = uv_layer.data[face.index]
-            i=0
-            for index in face.vertices:
-                if len(face.vertices) == 3:
-                    vert = mesh.vertices[index]
-                    writeString(file, 'd3d_model_vertex_normal_texture(temp, ')
-                    writeString(file, '%f, %f, %f, ' % (vert.co.x, vert.co.y, vert.co.z) )
-                    writeString(file, '%f, %f, %f, ' % (vert.normal.x, vert.normal.y, vert.normal.z) )
-                    if props.flip_uvs:
-                        writeString(file, '%f, %f' % (faceUV.uv[i][0], 1-faceUV.uv[i][1]) )
-                    else:
-                        writeString(file, '%f, %f' % (faceUV.uv[i][0], faceUV.uv[i][1]) )
-                    writeString(file, ');\n')
-                    i += 1
     else:
-    #else if the model has no UV map
-        uv_layer = mesh.tessface_uv_textures.active
-        for face in mesh.tessfaces:
-            for index in face.vertices:
-                if len(face.vertices) == 3:
-                    vert = mesh.vertices[index]
-                    writeString(file, 'd3d_model_vertex_normal(temp, ')
-                    writeString(file, '%f, %f, %f, ' % (vert.co.x, vert.co.y, vert.co.z) )
-                    writeString(file, '%f, %f, %f' % (vert.normal.x, vert.normal.y, vert.normal.z) )
-                    writeString(file, ');\n')
+        # Debug output to GML script
+        output = ""
+        count = 0;
+        for p in output_data:
+            if count % 3 == 0:
+                output += "\t\t//triangle " + str(count // 3) + "\n"
+            output += "\t\tvertex_position_3d(buf, " + str(p.get("vertices")[0]) + ", " + str(p.get("vertices")[1]) + ", " + str(p.get("vertices")[2]) + ");\n"
+            output += "\t\tvertex_normal(buf, " + str(p.get("normals")[0]) + ", " + str(p.get("normals")[1]) + ", " + str(p.get("normals")[2]) + ");\n"
+            if use_vert_colors:
+                output += "\t\tvertex_color(buf, make_color_rgb(" + str(p.get("colors")[0]) + ", " + str(p.get("colors")[1]) + ", " + str(p.get("colors")[2]) + "), 1);\n"
+            else:
+                output += "\t\tvertex_color(buf, c_white, 1);\n"
+            output += "\t\tvertex_texcoord(buf, " + str(p.get("uvs")[0]) + ", " + str(p.get("uvs")[1]) + ");\n"
+            if (count + 1) % 3 == 0:
+                output += "\n"
+            count += 1
+        # Add header and footer to file
+        header = "function load_model(format){\n\n\t/*\n\tuse the following format to load this model:\n\tvertex_format_begin();\n\t\tvertex_format_add_position_3d();\n\t\tvertex_format_add_normal();\n\t\tvertex_format_add_color();\n\t\tvertex_format_add_texcoord();\n\t vertex_format = vertex_format_end();\n\t*/\n\n"
+        output = header + "\tvar buf = vertex_create_buffer();\n\tvertex_begin(buf, format);\n\n" + output
+        output += "\tvertex_end(buf);\n\n\treturn buf;\n}"
 
-    #end the model output
-    writeString(file, 'd3d_model_primitive_end(temp);\nreturn temp;')
+    # Delete object copy and bmesh, and reselect original object
+    bm.free()
+    bpy.ops.object.delete()
+    original_object.select_set(True)
+    bpy.context.view_layer.objects.active = original_object
+    
+    # Output the data
+    if output_type == 'vertex_buffer':
+        f = open(filepath, 'wb')
+    else:
+        f = open(filepath, 'w', encoding = 'utf-8')
+    f.write(output)
+    f.close()
 
-    #output the file and close it for editing
-    file.flush()
-    file.close()
+    return {'FINISHED'}
 
-    #delete the new copy of the object now
-    bpy.context.scene.objects.unlink(object_copy)
+from bpy_extras.io_utils import ExportHelper
+from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
+from bpy.types import Operator
 
-    #reselect the original object
-    object_original.select = True
-    bpy.context.scene.objects.active = object_original
+def align_output_format(filepath, output_type):
+    # Format filename appropriately to the selected output type
+    import os
+    filename = os.path.basename(filepath)
+    if not filename:
+        return filepath
 
-    return True
+    stem, ext = os.path.splitext(filename)
+    if stem.startswith('.') and not ext:
+        stem, ext = '', stem
 
+    desired_ext = '.buf' if output_type == 'vertex_buffer' else '.gml'
+    ext_lower = ext.lower()
+    if ext_lower not in ['.buf', '.gml']:
+        return filepath + desired_ext
+    elif ext_lower != desired_ext:
+        # Strip extension
+        filepath = filepath[:-len(ext)]
+        return filepath + desired_ext
+    else:
+        return filepath
 
-###### EXPORT OPERATOR #######
+def update_ext(self, context):
+    # Update the filename in the file browser when the format changes
+    sfile = context.space_data
+    if not isinstance(sfile, bpy.types.SpaceFileBrowser):
+        return
+    if not sfile.active_operator:
+        return
+    if sfile.active_operator.bl_idname != 'EXPORT_OT_GML':
+        return
 
-#removed model_format, model_type, make_importable, use_alt_export_style
+    sfile.params.filename = align_output_format(
+        sfile.params.filename,
+        self.output_type,
+    )
 
-class Export_gm3d(bpy.types.Operator, ExportHelper):
-    """Save a GameMaker Studio 2 3D File"""
-
+class ExportData(Operator, ExportHelper):
+    """Export the active object to the selected GameMaker 3D format"""
     bl_idname = "export.gml"
-    bl_label = "Export for GameMaker"
-    bl_options = {'PRESET'}
+    bl_label = "Export"
+    
+    filename_ext = ''
 
-    filename_ext = ".gml"
     filter_glob: StringProperty(
-            default = "*.obj",
-            options = {'HIDDEN'},
-            )
+        default="*.buf;*.gm;*.gml",
+        options={'HIDDEN'},
+        maxlen=255,
+    )
 
+    # Operator properties
+    use_world_origin: BoolProperty(
+        name = "Use World Origin",
+        description = "Applies the position of the model relative to the world origin before exporting",
+        default = True,
+    )
+    
     apply_modifiers: BoolProperty(
-            name = "Apply Modifiers",
-            description = "Applies Modifiers to the Object before exporting",
-            default = True,
-            )
-        
-    rot_x90: BoolProperty(
-            name = "Rotate X by 90",
-            description = "Rotate 90 degrees around X to convert to Y-up",
-            default = False,
-            )
-        
+        name = "Apply Modifiers",
+        description = "Apply modifiers to the mesh before exporting",
+        default = True,
+    )
+    
     flip_y: BoolProperty(
-            name = "Mirror on Y Axis",
-            description = "Mirrors the Y coordinates of the object",
-            default = True,
-            )
-
+        name = "Flip On Y",
+        description = "Flips the mesh on the Y axis",
+        default = True,
+    )
+    
     flip_uvs: BoolProperty(
-            name = "Flip UV Vertically",
-            description = "Flips the UV coordinates on the Y axis",
-            default = True,
-            )
-        
-    mod_scale: FloatProperty(
-            name = "Scale",
-            description = "Adjusts the scale of the model",
-            default = 1.0,
-            )
-
-    path_mode: path_reference_mode
-
-    check_extension = True
-        
-    @classmethod
-    def poll(cls, context):
-        return context.active_object.type in ['MESH', 'CURVE', 'SURFACE', 'FONT']
-
+        name = "Flip UV Coordinates",
+        description = "Flips the UV coordinates on the Y axis",
+        default = True,
+    )
+    
+    scale_modifier: FloatProperty(
+        name = "Scale",
+        description = "Adjusts the scale of the model",
+        default = 1.0,
+        min = 0.01,
+        soft_min = 0.01,
+    )
+    
+    output_type: EnumProperty(
+        name = "Output Type",
+        description="The type of data to output",
+        items = (
+            ('vertex_buffer', "Vertex Buffer", "A vertex buffer that can be loaded into GameMaker at runtime"),
+            ('debug', "GML Script (debug)", "A human-readable script that can be used to import and debug"),
+        ),
+        default = 'vertex_buffer',
+        update = update_ext,
+    )
+    
+    def check(self, _context):
+        # Force the filename to update appropriately
+        old_filepath = self.filepath
+        self.filepath = align_output_format(
+            self.filepath,
+            self.output_type,
+        )
+        return self.filepath != old_filepath
+    
     def execute(self, context):
-        props = self.properties
-        filepath = self.filepath
-        filepath = bpy.path.ensure_ext(filepath, self.filename_ext)
-        exported = do_export(context, props, filepath)
-            
-        if exported:
-            print("GML script output to: " + filepath)
-                
-        return {'FINISHED'}
+        return export_gm3d(
+            context,
+            self.filepath,
+            self.use_world_origin,
+            self.apply_modifiers,
+            self.flip_y,
+            self.flip_uvs,
+            self.scale_modifier,
+            self.output_type
+        )
 
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-                    
-    def draw(self, context):
-        layout = self.layout
-        layout.prop(self, "apply_modifiers")
-        layout.prop(self, "rot_x90")
-        layout.prop(self, "flip_y")
-        layout.prop(self, "flip_uvs")
-        layout.prop(self, "mod_scale")
-
-###### REGISTER ######
-
+# Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
-    self.layout.operator(Export_gm3d.bl_idname, text = "GameMaker 3D (.gml)")
-
-classes = (
-    Export_gm3d,
-)
+    self.layout.operator(ExportData.bl_idname, text="Export GameMaker 3D (.buf, .gml)")
 
 def register():
-    for cls in classes:
-        bpy.utils.register_class(cls)
+    bpy.utils.register_class(ExportData)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 def unregister():
+    bpy.utils.unregister_class(ExportData)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
