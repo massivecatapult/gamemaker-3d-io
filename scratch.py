@@ -1,6 +1,7 @@
 import bpy
 import bmesh
 import struct
+from pathlib import Path
 
 def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
     
@@ -144,16 +145,34 @@ from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
 
+
+
 class ExportData(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "export.gml"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Export"
+    
+    def update_ext(self, context):
+        new_ext = ".buf"
+        if self.output_type == 'vertex_buffer':
+            print("buf")
+            new_ext = "buf"
+            #self.filename_ext = ".buf"
+        else:
+            print("gml")
+            new_ext = "gml"
+            #self.filename_ext = ".gml"
+        #for k in dir(self):
+            #print(k, getattr(self, k))
+        params = context.space_data.params
+        params.filename = f"{Path(self.filepath).stem}.{new_ext}"
+        #print(f"{Path(self.filepath).stem}.{new_ext}")
 
     # ExportHelper mixin class uses this
-    filename_ext = ".gml"
-
+    filename_ext = ".buf"
+    
     filter_glob: StringProperty(
-        default="*.gml",
+        default="*.gml;*.buf;*.dat",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
@@ -161,45 +180,46 @@ class ExportData(Operator, ExportHelper):
     # List of operator properties, the attributes will be assigned
     # to the class instance from the operator settings before calling.
     use_world_origin: BoolProperty(
-        name="Use World Origin",
-        description="Applies the position of the model relative to the world origin before exporting",
-        default=True,
+        name = "Use World Origin",
+        description = "Applies the position of the model relative to the world origin before exporting",
+        default = True,
     )
     
     apply_modifiers: BoolProperty(
-        name="Apply Modifiers",
-        description="Apply modifiers to the mesh before exporting",
-        default=True,
+        name = "Apply Modifiers",
+        description = "Apply modifiers to the mesh before exporting",
+        default = True,
     )
     
     flip_y: BoolProperty(
-        name="Flip On Y",
-        description="Flips the mesh on the Y axis",
-        default=True,
+        name = "Flip On Y",
+        description = "Flips the mesh on the Y axis",
+        default = True,
     )
     
     flip_uvs: BoolProperty(
-        name="Flip UV Coordinates",
-        description="Flips the UV coordinates on the Y axis",
-        default=True,
+        name = "Flip UV Coordinates",
+        description = "Flips the UV coordinates on the Y axis",
+        default = True,
     )
     
     scale_modifier: FloatProperty(
-        name="Scale",
-        description="Adjusts the scale of the model",
-        default=1.0,
-        min=0.01,
-        soft_min=0.01,
+        name = "Scale",
+        description = "Adjusts the scale of the model",
+        default = 1.0,
+        min = 0.01,
+        soft_min = 0.01,
     )
     
     output_type: EnumProperty(
-        name="Output Type",
+        name = "Output Type",
         description="The type of data to output",
-        items=(
+        items = (
             ('vertex_buffer', "Vertex Buffer", "A vertex buffer that can be loaded into GameMaker at runtime"),
             ('debug', "GML Script (debug)", "A human-readable script that can be used to import and debug"),
         ),
-        default='vertex_buffer',
+        default = 'vertex_buffer',
+        update = update_ext,
     )
     
     def execute(self, context):
@@ -207,13 +227,11 @@ class ExportData(Operator, ExportHelper):
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
-    self.layout.operator(ExportData.bl_idname, text="Export GameMaker 3D (*.gml)")
-
+    self.layout.operator(ExportData.bl_idname, text="Export GameMaker 3D")
 
 def register():
     bpy.utils.register_class(ExportData)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
-
 
 def unregister():
     bpy.utils.unregister_class(ExportData)
