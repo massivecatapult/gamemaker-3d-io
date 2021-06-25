@@ -1,7 +1,6 @@
 import bpy
 import bmesh
 import struct
-from pathlib import Path
 
 def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
     
@@ -145,34 +144,55 @@ from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
 
+def align_output_format(filepath, output_type):
+    import os
+    filename = os.path.basename(filepath)
+    if not filename:
+        return filepath
 
+    stem, ext = os.path.splitext(filename)
+    if stem.startswith('.') and not ext:
+        stem, ext = '', stem
+
+    desired_ext = '.buf' if output_type == 'vertex_buffer' else '.gml'
+    ext_lower = ext.lower()
+    if ext_lower not in ['.buf', '.gml']:
+        return filepath + desired_ext
+    elif ext_lower != desired_ext:
+        filepath = filepath[:-len(ext)]  # strip off ext
+        return filepath + desired_ext
+    else:
+        return filepath
+
+def update_ext(self, context):
+    # Update the filename in the file browser when the format changes
+    sfile = context.space_data
+    if not isinstance(sfile, bpy.types.SpaceFileBrowser):
+        print('not in space file browser!')
+        return
+    if not sfile.active_operator:
+        print('active operator error!')
+        return
+    #if sfile.active_operator.bl_idname != "export.gml":
+        #print('wrong bl_idname!')
+        #return
+
+    sfile.params.filename = align_output_format(
+        sfile.params.filename,
+        self.output_type,
+    )
+    print(sfile.params.filename)
 
 class ExportData(Operator, ExportHelper):
     """This appears in the tooltip of the operator and in the generated docs"""
     bl_idname = "export.gml"  # important since its how bpy.ops.import_test.some_data is constructed
     bl_label = "Export"
     
-    def update_ext(self, context):
-        new_ext = ".buf"
-        if self.output_type == 'vertex_buffer':
-            print("buf")
-            new_ext = "buf"
-            #self.filename_ext = ".buf"
-        else:
-            print("gml")
-            new_ext = "gml"
-            #self.filename_ext = ".gml"
-        #for k in dir(self):
-            #print(k, getattr(self, k))
-        params = context.space_data.params
-        params.filename = f"{Path(self.filepath).stem}.{new_ext}"
-        #print(f"{Path(self.filepath).stem}.{new_ext}")
-
     # ExportHelper mixin class uses this
-    filename_ext = ".buf"
-    
+    filename_ext = ''
+
     filter_glob: StringProperty(
-        default="*.gml;*.buf;*.dat",
+        default="*.buf;*.gm;*.gml",
         options={'HIDDEN'},
         maxlen=255,  # Max internal buffer length, longer would be clamped.
     )
@@ -221,6 +241,15 @@ class ExportData(Operator, ExportHelper):
         default = 'vertex_buffer',
         update = update_ext,
     )
+    
+    def check(self, _context):
+        #Force the filename to update appropriately
+        old_filepath = self.filepath
+        self.filepath = align_output_format(
+            self.filepath,
+            self.output_type,
+        )
+        return self.filepath != old_filepath
     
     def execute(self, context):
         return export_gm3d(context, self.filepath, self.use_world_origin, self.apply_modifiers, self.flip_y, self.flip_uvs, self.scale_modifier, self.output_type)
