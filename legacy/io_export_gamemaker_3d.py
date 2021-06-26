@@ -1,8 +1,8 @@
 bl_info = {
-        "name": "Export for GameMaker (.txt)",
+        "name": "Export for GameMaker (.gml)",
         "author": "Martin Crownover",
-        "version": (1, 5, 9),
-        "blender": (2, 7, 8),
+        "version": (1, 6, 0),
+        "blender": (2, 7, 9),
         "location": "File > Export",
         "description": "Export 3D models for use GameMaker: Studio, as scripts, models, and raw comma-separated data",
         "warning": "",
@@ -365,11 +365,10 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
         '''Exports the active object as a GameMaker: Studio 3D model script'''
         bl_idname = "export.gml"
         bl_label = "Export for GameMaker"
-        filename = "hello"
-        filename_ext = ".txt"
+        filename_ext = ".gml"
         filter_glob = StringProperty(
-                default="*.txt",
-                options={'HIDDEN'},
+                default="*.gml",
+                options={'HIDDEN'}
                 )
 
         output_format = EnumProperty(name="Format",
@@ -391,6 +390,10 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
             ),
             default='TRILIST'
            )
+           
+        make_importable = BoolProperty(name="Make Importable",
+          description="Adds text at the beginning of the file to make it importable as a script",
+          default=True)
         
         apply_modifiers = BoolProperty(name="Apply Modifiers",
           description="Applies Modifiers to the Object before exporting",
@@ -457,6 +460,7 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
                 layout.prop(self, "output_format")
                 if self.output_format == 'SCRIPT':
                         layout.prop(self, "model_type")
+                        layout.prop(self, "make_importable")
                         layout.prop(self, "apply_modifiers")
                         layout.prop(self, "rot_x90")
                         layout.prop(self, "flip_y")
@@ -466,6 +470,7 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
                         layout.prop(self,"use_alt_export_style")
                 elif self.output_format == 'MODEL':
                         layout.prop(self, "model_type")
+                        layout.prop(self, "make_importable")
                         layout.prop(self, "apply_modifiers")
                         layout.prop(self, "rot_x90")
                         layout.prop(self, "flip_y")
@@ -484,7 +489,7 @@ class Export_gm3d(bpy.types.Operator, ExportHelper):
 ### REGISTER ###
 
 def menu_func(self, context):
-        self.layout.operator(Export_gm3d.bl_idname, text="GameMaker 3D (.txt)")
+        self.layout.operator(Export_gm3d.bl_idname, text="GameMaker 3D (.gml)")
 
 def register():
         bpy.utils.register_module(__name__)
