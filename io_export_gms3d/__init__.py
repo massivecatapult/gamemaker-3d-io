@@ -33,9 +33,11 @@ bl_info = {
 import bpy
 import bmesh
 import struct
+from . import export_gm
 
 def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
-    
+    """Export the active object as a GameMaker Studio 2 compatible 3D file"""
+
     # Make sure we're in OBJECT mode
     bpy.ops.object.mode_set(mode = 'OBJECT')
     
@@ -85,39 +87,11 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     mesh = bpy.context.object.data
     bm = bmesh.new()
     bm.from_mesh(mesh)
-    
-    # Triangulate
-    bmesh.ops.triangulate(bm, faces=bm.faces[:])
-    
-    # Get uv active layout, if there is one
-    uv_layer = bm.loops.layers.uv.active
-    use_uv_layer = True if uv_layer else False
-    
-    # Get vertex colors, if there are any
-    vert_colors = bm.loops.layers.color.active
-    use_vert_colors = True if vert_colors else False
-        
-    # Iterate through the faces of the mesh and grab data for each point
-    output_data = []
-    for face in bm.faces:
-        for loop in face.loops:
-            point = {}
-            point["vertices"] = [round(v, 4) for v in loop.vert.co]
-            point["normals"] = [round(n, 4) for n in loop.vert.normal]
-            if use_vert_colors:
-                point["colors"] = [int(round(c * 255)) for c in loop[vert_colors]]
-            else:
-                point["colors"] = [255, 255, 255]
-            if use_uv_layer:
-                point["uvs"] = [round(u, 4) for u in loop[uv_layer].uv]
-                if flip_uvs:
-                    point["uvs"][1] = round(1 - loop[uv_layer].uv[1], 4)
-            else:
-                point["uvs"] = [0, 0]
-            output_data.append(point)
-        
+
+    output_data = export_gm.get_face_data(bm, flip_uvs)
+            
     if output_type == 'vertex_buffer':
-        # Vertex buffer output
+        # Vertex buffer output - trianglelist
         output_list = []
         for p in output_data:
             output_list.append(struct.pack("fff", p.get("vertices")[0], p.get("vertices")[1], p.get("vertices")[2]))
@@ -127,15 +101,15 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
         output = b"".join(output_list)
 
     else:
-        # Debug output to GML script
+        # Debug output to GML script - trianglelist
         output = ""
-        count = 0;
+        count = 0
         for p in output_data:
             if count % 3 == 0:
                 output += "\t\t//triangle " + str(count // 3) + "\n"
             output += "\t\tvertex_position_3d(buf, " + str(p.get("vertices")[0]) + ", " + str(p.get("vertices")[1]) + ", " + str(p.get("vertices")[2]) + ");\n"
             output += "\t\tvertex_normal(buf, " + str(p.get("normals")[0]) + ", " + str(p.get("normals")[1]) + ", " + str(p.get("normals")[2]) + ");\n"
-            if use_vert_colors:
+            if p.get("colors")[0] + p.get("colors")[1] + p.get("colors")[2] < 765:
                 output += "\t\tvertex_color(buf, make_color_rgb(" + str(p.get("colors")[0]) + ", " + str(p.get("colors")[1]) + ", " + str(p.get("colors")[2]) + "), 1);\n"
             else:
                 output += "\t\tvertex_color(buf, c_white, 1);\n"
@@ -169,7 +143,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
 
 def align_output_format(filepath, output_type):
-    # Format filename appropriately to the selected output type
+    """Format filename appropriately to the selected output type"""
     import os
     filename = os.path.basename(filepath)
     if not filename:
@@ -191,7 +165,7 @@ def align_output_format(filepath, output_type):
         return filepath
 
 def update_ext(self, context):
-    # Update the filename in the file browser when the format changes
+    """Update the filename in the file browser when the format changes"""
     sfile = context.space_data
     if not isinstance(sfile, bpy.types.SpaceFileBrowser):
         return
@@ -285,7 +259,7 @@ class ExportData(Operator, ExportHelper):
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
-    self.layout.operator(ExportData.bl_idname, text="Export GameMaker 3D (.buf, .gml)")
+    self.layout.operator(ExportData.bl_idname, text="GameMaker 3D (.buf, .gml)")
 
 def register():
     bpy.utils.register_class(ExportData)
