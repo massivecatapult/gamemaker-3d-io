@@ -7,7 +7,7 @@ bl_info = {
         "description": "Export 3D Model for GameMaker: Studio",
         "warning": "",
         "wiki_url": "",
-        "tracker_url": "http://blog.martincrownover.com/blender-addon-gmd3d",
+        "tracker_url": "http://martincrownover.com/blender-addon-gmd3d",
         "category": "Import-Export"}
 
 '''
