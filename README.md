@@ -21,3 +21,10 @@ This addon is a work-in-progress; thanks for your patience!
   - For vertex buffers, load the file into your GameMaker project as a buffer, convert to a vertex buffer, and submit the buffer for drawing/shaders
   - For GML output, open the file, copy and paste the function into your project, then call it in your game to build the model
 
+### Export Options
+- **Use World Origin:** If selected, the object's position will be applied before it is output, which will set the object's origin to the world origin. If unselected, the object will retain its original origin point.
+- **Apply Modifiers:** If selected, the object's modifiers will be applied to the model before it is output, which will make the output retain the same appearance as in Blender.
+- **Flip On Y:** TBA
+- **Flip UV Coordinates:** TBA
+- **Scale:** TBA
+- **Output Type:** TBA
