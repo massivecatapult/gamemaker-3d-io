@@ -21,9 +21,8 @@ This addon is a work-in-progress; thanks for your patience!
 
 ### How to use:
 1. Create a 3D model for your game, then select it
-1. Go to File > Export > GameMaker 3D (.buf, .gml)
-1. Choose the appropriate options, and click Export
-1. Depending on which export format was chosen:
+1. Go to File > Export > GameMaker 3D (.buf, .gml), choose the desired options, and click Export
+1. Depending on which output type was chosen:
    - For vertex buffers, load the file into a GameMaker project as a buffer, convert to a vertex buffer, and submit the buffer for drawing/shaders
    - For GML output, open the file, copy and paste the function into a GameMaker project, then call it in your game to build the model
 
