@@ -14,7 +14,7 @@ This addon is a work-in-progress; thanks for your patience!
 - Supports any model which can be broken into triangle lists - support for line lists and point lists is planned for the future
 
 ### How to install:
-1. Download the Zip of the latest version of the addon from the **download** directory
+1. Download the Zip of the latest version of the addon from the [download](https://github.com/massivecatapult/gamemaker-3d-io/tree/main/download) directory
 1. Open Blender, then go to Edit > Preferences, and select the Addons tab on the left
 1. Click Install... at the top right of the window, then find and select the downloaded Zip file
 1. Check the box to the left of Import-Export: GameMaker Studio 2 3D format to enable the addon
