@@ -31,7 +31,7 @@ This addon is a work-in-progress; thanks for your patience!
 - **Apply Modifiers:** If selected, the object's modifiers will be applied to the model before it is output, which will make the output retain the same appearance as in Blender.
 - **Flip On Y:** Flips/mirrors the object's Y coordinates before it is output. This action will pivot around the object's origin, which will also be the world origin if **Use World Origin** is selected. This can help ensure that the object looks correct in GameMaker's 3D view.
 - **Flip UV Coordinates:** Flips the object's UV coordinates (on Y), which can help ensure that textures draw properly once in GameMaker.
-- **Scale:** Additional scaling to apply to the object before output, which can be useful if there is a disparity between your workspace in Blender and the size of objects in GameMaker.
+- **Scale:** Additional scaling to apply to the object before output, which can be useful if there is a disparity between your workspace in Blender and the size of objects in GameMaker. The minimum scale is 0.01.
 - **Output Type:** Choose either between vertex buffers or GML output. Vertex buffers are external files that can be loaded directly into GameMaker at runtime, while GML files should be copied into GameMaker as scripts/functions and used to build the vertex buffer at runtime. It is recommended to only use GML output for debugging, because the resulting scripts can be quite large.
 
 ### Tips
