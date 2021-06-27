@@ -35,6 +35,15 @@ This addon is a work-in-progress; thanks for your patience!
 - **Output Type:** Choose either between vertex buffers or GML output. Vertex buffers are external files that can be loaded directly into GameMaker at runtime, while GML files should be copied into GameMaker as scripts/functions and used to build the vertex buffer at runtime. It is recommended to only use GML output for debugging, because the resulting scripts can be quite large.
 
 ### Tips
-- Both output types currently only support trianglelists, and require a vertex format in GameMaker and use that when loading objects. The format for both is: position 3d, normal, color, and textcoord. If you output your object to GML, a copy of this formatting is included in a comment at the head of the script.
+- Both output types currently only support trianglelists, and require a vertex format in GameMaker and use that when loading objects. The format for both is: 
+```gml
+vertex_format_begin();
+	vertex_format_add_position_3d();
+	vertex_format_add_normal();
+	vertex_format_add_color();
+	vertex_format_add_texcoord();
+format = vertex_format_end();
+```
+- If you output your object to GML, a copy of the formatting above is included in a comment at the head of the script.
 - To ensure that objects retain smooth/hard edges in GameMaker, consider setting the object to smooth shading, then using an Edge Split modifier and marking sharp edges where desired. Make sure to export with modifiers applied.
 - Legacy versions of the script, which supported D3D and GML output for GameMaker Studio 1, are available here: https://github.com/massivecatapult/gamemaker-3d-io/tree/main/legacy
