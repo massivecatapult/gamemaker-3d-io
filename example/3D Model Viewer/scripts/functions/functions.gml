@@ -1,3 +1,7 @@
+function scale_var(v, scale){
+	return v * scale;
+}
+
 function vb_grid(){
 	var size = 100;
 	var color = grid_color;
