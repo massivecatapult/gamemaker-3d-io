@@ -1,27 +1,36 @@
-//set the goal variables to x and y values relative to where the ball is, and where the cam is supposed to be
-if (instance_exists(obj_ball)){
-    x_goal = obj_ball.x + lengthdir_x(dist, angle);
-    y_goal = obj_ball.y + lengthdir_y(dist, angle);
-	z_goal = (dist * 0.2) + 5;
-    }
-	
-//x_goal = 0;
-//y_goal = 0;
-//z_goal = 0;
+window_set_cursor(cr_default);
 
-//here's where we do all the movement smoothing for the camera
-//each step, the camera moves towards it's goal point...  but not directly to it
-//for x, y, z, and distance, the difference is multiplied by .07, which means 7% the distance
-//for the angle, or rotation, it's multiplied by .08, so it will move faster
-//there are probably better ways to do this, but this works, and it works relatively fast
-
-x -= (x - x_goal) * ease;
-y -= (y - y_goal) * ease;
-z -= (z - z_goal) * ease;
-
-var adiff = angle_difference(angle, angle_goal);
-if (abs(adiff) > 0){
-	angle -= adiff * ease;
+if (mouse_check_button(mb_middle)){
+	window_set_cursor(cr_none);
+	var dx = (display_mouse_get_x() - m[0]) * sensitivity;
+	var dy = (display_mouse_get_y() - m[1]) * sensitivity;
+	if (keyboard_check(vk_shift)){
+		//get x dir
+		var p = rot[0] + 90;
+		pos[0] = pos[0] - lengthdir_x((dx * 0.05), p);
+		pos[1] = pos[1] - lengthdir_y((dx * 0.05), p);
+		pos[2] += (dy * 0.05);
+	} else {
+		rot[0] -= dx;
+		rot[1] -= dy;
+	}
+	display_mouse_set(m[0], m[1]);
 }
 
-dist -= (dist - dist_goal) * ease;
+if (mouse_wheel_up()){
+	dis = clamp(dis - 2, 2, 50);
+}
+
+if (mouse_wheel_down()){
+	dis = clamp(dis + 2, 2, 50);
+}
+
+if (keyboard_check_pressed(vk_space)){
+	pos = [0, 0, 0];
+}
+
+x = pos[0] + lengthdir_x(lengthdir_x(dis,rot[1]), rot[0]);
+y = pos[1] + lengthdir_y(lengthdir_x(dis,rot[1]), rot[0]);
+z = pos[2] + lengthdir_y(dis, rot[1]);
+
+m = [display_mouse_get_x(), display_mouse_get_y()];

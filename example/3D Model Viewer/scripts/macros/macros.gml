@@ -4,5 +4,7 @@
 #macro y_axis_color make_color_rgb(139, 220, 0)
 #macro fog_color make_color_rgb(60, 60, 60)
 
-#macro fog_dist_near 30
+#macro fog_dist_near 20
 #macro fog_dist_far 80
+
+#macro ambient_light_color make_color_rgb(93, 101, 111)

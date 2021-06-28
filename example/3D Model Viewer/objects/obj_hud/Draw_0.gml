@@ -48,10 +48,10 @@ draw_circle(60, 480, 6, true);
 
 //draw camera sprite, with distance and rotation set directly from the camera's distance and angle variables
 if (instance_exists(obj_camera)){
-    var d = obj_camera.dist;
-    var a = obj_camera.angle;
-    var t = ((d / 20) * 10) + 10;
-    draw_sprite_ext(spr_cam, -1, 60+lengthdir_x(t,a), 480+lengthdir_y(t,a), .75, .75, a+90, c_white, 1);
+    //var d = obj_camera.dist;
+    //var a = obj_camera.angle;
+    //var t = ((d / 20) * 10) + 10;
+    //draw_sprite_ext(spr_cam, -1, 60+lengthdir_x(t,a), 480+lengthdir_y(t,a), .75, .75, a+90, c_white, 1);
     }
 
 //re-enable lighting, and reset alpha to 1 and color to white so things draw correctly in the next step
