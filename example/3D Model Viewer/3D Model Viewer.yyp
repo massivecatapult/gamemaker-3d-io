@@ -10,6 +10,7 @@
     {"id":{"name":"obj_camera","path":"objects/obj_camera/obj_camera.yy",},"order":3,},
     {"id":{"name":"obj_hud","path":"objects/obj_hud/obj_hud.yy",},"order":5,},
     {"id":{"name":"Sprite5","path":"sprites/Sprite5/Sprite5.yy",},"order":4,},
+    {"id":{"name":"spr_uvcolorgrid","path":"sprites/spr_uvcolorgrid/spr_uvcolorgrid.yy",},"order":5,},
     {"id":{"name":"fnt_arial","path":"fonts/fnt_arial/fnt_arial.yy",},"order":0,},
     {"id":{"name":"obj_ball","path":"objects/obj_ball/obj_ball.yy",},"order":7,},
     {"id":{"name":"obj_floor","path":"objects/obj_floor/obj_floor.yy",},"order":9,},
