@@ -10,6 +10,8 @@ if (mouse_check_button(mb_middle)){
 		pos[0] = pos[0] - lengthdir_x((dx * 0.05), p);
 		pos[1] = pos[1] - lengthdir_y((dx * 0.05), p);
 		pos[2] += (dy * 0.05);
+	} else if (keyboard_check(vk_control)){
+		dis += (dy * 0.25);
 	} else {
 		rot[0] -= dx;
 		rot[1] -= dy;
@@ -18,16 +20,18 @@ if (mouse_check_button(mb_middle)){
 }
 
 if (mouse_wheel_up()){
-	dis = clamp(dis - 2, 2, 50);
+	dis -= 2;
 }
 
 if (mouse_wheel_down()){
-	dis = clamp(dis + 2, 2, 50);
+	dis += 2;
 }
 
 if (keyboard_check_pressed(vk_space)){
 	pos = [0, 0, 0];
 }
+
+dis = clamp(dis, 2, 50);
 
 x = pos[0] + lengthdir_x(lengthdir_x(dis,rot[1]), rot[0]);
 y = pos[1] + lengthdir_y(lengthdir_x(dis,rot[1]), rot[0]);

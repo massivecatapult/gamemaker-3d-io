@@ -1,4 +1,6 @@
-//vertex formats
+//global vars and vertex formats
+global.model_name = "Default";
+
 vertex_format_begin();
 	vertex_format_add_position_3d();
 	vertex_format_add_normal();

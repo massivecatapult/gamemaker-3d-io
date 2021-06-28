@@ -42,6 +42,8 @@ draw_circle(60, 480, 6, false);
 
 //set color back to white for ball outline
 draw_set_color(c_white);
+draw_set_font(fnt_arial);
+draw_text(10, 10, string(global.model_name));
 
 //draw the HUD ball outline
 draw_circle(60, 480, 6, true);
