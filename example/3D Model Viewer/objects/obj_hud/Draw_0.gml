@@ -1,6 +1,8 @@
 //set the projection to ortho, so we can draw a flat HUD over the main projection
 //d3d_set_projection_ortho(0 ,0, 960, 540, 0);
 
+
+
 matrix_set(matrix_world, m);
 a = [0, 0, window_get_width(), window_get_height()];
 
@@ -24,9 +26,8 @@ camera_set_view_mat(camera, matrix_lookat);
 camera_set_proj_mat(camera, matrix_proj);
 camera_apply(camera);
 
-//disable lighting for now, so our HUD doesn't draw completely black, since 2D elements can't be lit
-//also disable fog, so it doesn't mess with the HUD - don't need to worry about the values we set for this, they get updated on re-enable
 draw_set_lighting(false);
+gpu_set_ztestenable(false);
 gpu_set_fog(false, fog_color, fog_dist_near, fog_dist_far);
 
 //set color to black and alpha to .25 for HUD elements
@@ -35,31 +36,31 @@ draw_set_alpha(.5);
 
 //draw box for HUD
 draw_rectangle(a[0] + scale_var(10, scale), a[3] - scale_var(110, scale), a[0] + scale_var(110, scale), a[3] - scale_var(10, scale), false);
-
-//set color to red and alpha back to 1
-draw_set_color(c_red);
 draw_set_alpha(1);
 
-//draw the HUD ball
-draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(6, scale), false);
-
-//set color back to white for ball outline
 draw_set_color(c_white);
-
-//draw the HUD ball outline
-draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(6, scale), true);
-
 draw_set_font(fnt_arial);
 draw_text_transformed(a[0] + scale_var(10, scale), a[1] + scale_var(10, scale), string(global.model_name), scale * 0.3, scale * 0.3, 0);
 
-
-//draw camera sprite, with distance and rotation set directly from the camera's distance and angle variables
+//draw camera
 if (instance_exists(obj_camera)){
-    //var d = obj_camera.dist;
-    //var a = obj_camera.angle;
-    //var t = ((d / 20) * 10) + 10;
-    //draw_sprite_ext(spr_cam, -1, 60+lengthdir_x(t,a), 480+lengthdir_y(t,a), .75, .75, a+90, c_white, 1);
-    }
+	var c = obj_camera;
+	var crot = ((angle_difference(0, c.rot[1]) + 180) / 6) + 30;
+	var cx = a[0] + scale_var(60, scale) + scale_var(c.pos[0], scale) + lengthdir_x(lengthdir_x(scale_var((c.dis + 50) / 3, scale), c.rot[1]), c.rot[0]);
+	var cy = a[3] - scale_var(60, scale) + scale_var(c.pos[1], scale) + lengthdir_y(lengthdir_x(scale_var((c.dis + 50) / 3, scale), c.rot[1]), c.rot[0]);
+
+	if (angle_difference(0, c.rot[1]) >= 0){
+		draw_set_color(c_teal);
+		draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(5, scale), false);
+	}
+	
+	draw_sprite_ext(spr_camera, crot, clamp(cx, a[0] + scale_var(10, scale), a[0] + scale_var(110, scale)), clamp(cy, a[3] - scale_var(110, scale), a[3] - scale_var(10, scale)), scale * 0.3, scale * 0.3, c.rot[0], c_white, 1);
+	
+	if (angle_difference(0, c.rot[1]) < 0){
+		draw_set_color(c_teal);
+		draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(5, scale), false);
+	}
+}
 
 //re-enable lighting, and reset alpha to 1 and color to white so things draw correctly in the next step
 draw_set_color(c_white);

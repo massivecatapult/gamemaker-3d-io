@@ -1,18 +1,14 @@
 {
   "resources": [
-    {"id":{"name":"spr_cam","path":"sprites/spr_cam/spr_cam.yy",},"order":1,},
-    {"id":{"name":"bg_grid","path":"sprites/bg_grid/bg_grid.yy",},"order":1,},
-    {"id":{"name":"bg_ball_shadow","path":"sprites/bg_ball_shadow/bg_ball_shadow.yy",},"order":3,},
-    {"id":{"name":"bg_ball_shadow_ao","path":"sprites/bg_ball_shadow_ao/bg_ball_shadow_ao.yy",},"order":5,},
     {"id":{"name":"functions","path":"scripts/functions/functions.yy",},"order":1,},
     {"id":{"name":"macros","path":"scripts/macros/macros.yy",},"order":4,},
     {"id":{"name":"obj_worldspawn","path":"objects/obj_worldspawn/obj_worldspawn.yy",},"order":1,},
     {"id":{"name":"obj_camera","path":"objects/obj_camera/obj_camera.yy",},"order":3,},
     {"id":{"name":"obj_hud","path":"objects/obj_hud/obj_hud.yy",},"order":5,},
-    {"id":{"name":"Sprite5","path":"sprites/Sprite5/Sprite5.yy",},"order":4,},
     {"id":{"name":"spr_uvcolorgrid","path":"sprites/spr_uvcolorgrid/spr_uvcolorgrid.yy",},"order":5,},
     {"id":{"name":"fnt_arial","path":"fonts/fnt_arial/fnt_arial.yy",},"order":0,},
-    {"id":{"name":"obj_ball","path":"objects/obj_ball/obj_ball.yy",},"order":7,},
+    {"id":{"name":"obj_model","path":"objects/obj_model/obj_model.yy",},"order":7,},
+    {"id":{"name":"spr_camera","path":"sprites/spr_camera/spr_camera.yy",},"order":6,},
     {"id":{"name":"obj_floor","path":"objects/obj_floor/obj_floor.yy",},"order":9,},
     {"id":{"name":"rm_example","path":"rooms/rm_example/rm_example.yy",},"order":1,},
     {"id":{"name":"notes","path":"notes/notes/notes.yy",},"order":1,},
@@ -42,7 +38,6 @@
   ],
   "Folders": [
     {"folderPath":"folders/Sprites.yy","order":1,"resourceVersion":"1.0","name":"Sprites","tags":[],"resourceType":"GMFolder",},
-    {"folderPath":"folders/Sprites/tilesets.yy","order":3,"resourceVersion":"1.0","name":"tilesets","tags":[],"resourceType":"GMFolder",},
     {"folderPath":"folders/Tile Sets.yy","order":3,"resourceVersion":"1.0","name":"Tile Sets","tags":[],"resourceType":"GMFolder",},
     {"folderPath":"folders/Sounds.yy","order":5,"resourceVersion":"1.0","name":"Sounds","tags":[],"resourceType":"GMFolder",},
     {"folderPath":"folders/Paths.yy","order":7,"resourceVersion":"1.0","name":"Paths","tags":[],"resourceType":"GMFolder",},

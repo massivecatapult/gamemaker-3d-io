@@ -1,5 +1,5 @@
 //global vars and vertex formats
-global.model_name = "Default";
+global.model_name = "Default (sphere.buf)";
 
 vertex_format_begin();
 	vertex_format_add_position_3d();
@@ -32,5 +32,5 @@ draw_light_enable(2, true);
 //create example objects
 instance_create_depth(0, 0, 0, obj_camera);
 instance_create_depth(0, 0, -20, obj_hud);
-instance_create_depth(0, 0, -10, obj_ball);
+instance_create_depth(0, 0, -10, obj_model);
 instance_create_depth(0, 0, -5, obj_floor);

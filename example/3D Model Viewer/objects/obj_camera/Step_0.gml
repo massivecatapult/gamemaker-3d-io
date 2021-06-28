@@ -27,14 +27,14 @@ if (mouse_wheel_down()){
 	dis += 2;
 }
 
-if (keyboard_check_pressed(vk_space)){
+if (keyboard_check_pressed(vk_numpad0)){
 	pos = [0, 0, 0];
 }
 
 dis = clamp(dis, 2, 50);
 
-x = pos[0] + lengthdir_x(lengthdir_x(dis,rot[1]), rot[0]);
-y = pos[1] + lengthdir_y(lengthdir_x(dis,rot[1]), rot[0]);
+x = pos[0] + lengthdir_x(lengthdir_x(dis, rot[1]), rot[0]);
+y = pos[1] + lengthdir_y(lengthdir_x(dis, rot[1]), rot[0]);
 z = pos[2] + lengthdir_y(dis, rot[1]);
 
 m = [display_mouse_get_x(), display_mouse_get_y()];
