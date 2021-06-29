@@ -13,21 +13,6 @@ This addon is a work-in-progress; thanks for your patience!
 - Exports models with normals, vertex colors, and UV coordinates included
 - Supports any model which can be broken into triangle lists - support for line lists and point lists is planned for the future
 
-### Example
-A pre-compiled GameMaker Studio 2 executable is available to try, which has a basic 3D world set up and some functions for loading and viewing models under different conditions. It can be found in the [example](https://github.com/massivecatapult/gamemaker-3d-io/tree/main/example) directory. To try out the example for yourself, do the following:
-1. Download the example from the link above
-2. Extract the files to a folder and run **3D Model Viewer.exe**
-3. Use the following controls to view models (modeled after Blender's controls, for convenience):
-   - Middle Mouse: rotate the view
-   - Middle Mouse + Shift: pan the view
-   - Middle Mouse + Ctrl/Mouse Wheel: zoom the view
-   - Numpad 0: reset the position of the view
-   - M: load a new model for viewing
-   - D: set the model to "demo mode", which will have it rotate around all axis
-   - L: toggle lighting
-   - T: toggle texture
-   - Escape: close the app
-
 A number of example models have been included to try. The source code for this project is also available [here](https://github.com/massivecatapult/gamemaker-3d-io/tree/main/source/3D%20Model%20Viewer).
 
 ### How to install:
@@ -50,6 +35,21 @@ A number of example models have been included to try. The source code for this p
 - **Flip UV Coordinates:** Flips the object's UV coordinates (on Y), which can help ensure that textures draw properly once in GameMaker.
 - **Scale:** Additional scaling to apply to the object before output, which can be useful if there is a disparity between your workspace in Blender and the size of objects in GameMaker. The minimum scale is 0.01.
 - **Output Type:** Choose either between vertex buffers or GML output. Vertex buffers are external files that can be loaded directly into GameMaker at runtime, while GML files should be copied into GameMaker as scripts/functions and used to build the vertex buffer at runtime. It is recommended to only use GML output for debugging, because the resulting scripts can be quite large.
+
+### Example
+A pre-compiled GameMaker Studio 2 executable is available to try, which has a basic 3D world set up and some functions for loading and viewing models under different conditions. It can be found in the [example](https://github.com/massivecatapult/gamemaker-3d-io/tree/main/example) directory. To try out the example for yourself, do the following:
+1. Download the example from the link above
+2. Extract the files to a folder and run **3D Model Viewer.exe**
+3. Use the following controls to view models (modeled after Blender's controls, for convenience):
+   - Middle Mouse: rotate the view
+   - Middle Mouse + Shift: pan the view
+   - Middle Mouse + Ctrl/Mouse Wheel: zoom the view
+   - Numpad 0: reset the position of the view
+   - M: load a new model for viewing
+   - D: set the model to "demo mode", which will have it rotate around all axis
+   - L: toggle lighting
+   - T: toggle texture
+   - Escape: close the app
 
 ### Tips
 - Both output types currently only support trianglelists, and require a vertex format in GameMaker and use that when loading objects. The format for both is: 
