@@ -17,8 +17,8 @@
   "width": 1024,
   "height": 1024,
   "textureGroupId": {
-    "name": "Default",
-    "path": "texturegroups/Default",
+    "name": "mipmap",
+    "path": "texturegroups/mipmap",
   },
   "swatchColours": null,
   "gridX": 0,

@@ -31,16 +31,37 @@ gpu_set_ztestenable(false);
 gpu_set_fog(false, fog_color, fog_dist_near, fog_dist_far);
 
 //set color to black and alpha to .25 for HUD elements
-draw_set_color(c_black);
-draw_set_alpha(.5);
+
+
 
 //draw box for HUD
-draw_rectangle(a[0] + scale_var(10, scale), a[3] - scale_var(110, scale), a[0] + scale_var(110, scale), a[3] - scale_var(10, scale), false);
+
+draw_set_alpha(.5);
+draw_line_color(a[0] + scale_var(20, scale), a[3] - scale_var(60, scale), a[0] + scale_var(100, scale), a[3] - scale_var(60, scale), x_axis_color, x_axis_color);
+draw_line_color(a[0] + scale_var(60, scale), a[3] - scale_var(100, scale), a[0] + scale_var(60, scale), a[3] - scale_var(20, scale), y_axis_color, y_axis_color);
+draw_set_alpha(1);
+draw_set_color(x_axis_color);
+draw_circle(a[0] + scale_var(20, scale), a[3] - scale_var(60, scale), scale_var(6, scale), false);
+draw_circle(a[0] + scale_var(100, scale), a[3] - scale_var(60, scale), scale_var(6, scale), false);
+draw_set_color(y_axis_color);
+draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(100, scale), scale_var(6, scale), false);
+draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(20, scale), scale_var(6, scale), false);
+draw_set_color(c_black);
+	draw_set_halign(fa_center);
+	draw_set_valign(fa_middle);
+	draw_text_transformed(a[0] + scale_var(20, scale), a[3] - scale_var(59.5, scale), "-X", scale * 0.15, scale * 0.15, 0);
+	draw_text_transformed(a[0] + scale_var(100, scale), a[3] - scale_var(59.5, scale), "+X", scale * 0.15, scale * 0.15, 0);
+	draw_text_transformed(a[0] + scale_var(60, scale), a[3] - scale_var(99.5, scale), "-Y", scale * 0.15, scale * 0.15, 0);
+	draw_text_transformed(a[0] + scale_var(60, scale), a[3] - scale_var(19.5, scale), "+Y", scale * 0.15, scale * 0.15, 0);
+	draw_set_halign(fa_left);
+	draw_set_valign(fa_top);
+draw_set_alpha(.5);
+draw_roundrect_ext(a[0] + scale_var(10, scale), a[3] - scale_var(110, scale), a[0] + scale_var(110, scale), a[3] - scale_var(10, scale), scale_var(4, scale), scale_var(4, scale), false);
 draw_set_alpha(1);
 
 draw_set_color(c_white);
 draw_set_font(fnt_arial);
-draw_text_transformed(a[0] + scale_var(10, scale), a[1] + scale_var(10, scale), string(global.model_name), scale * 0.3, scale * 0.3, 0);
+draw_text_transformed(a[0] + scale_var(10, scale), a[1] + scale_var(10, scale), "Model: " + string(global.model_name), scale * 0.3, scale * 0.3, 0);
 
 //draw camera
 if (instance_exists(obj_camera)){
@@ -50,19 +71,25 @@ if (instance_exists(obj_camera)){
 	var cy = a[3] - scale_var(60, scale) + scale_var(c.pos[1], scale) + lengthdir_y(lengthdir_x(scale_var((c.dis + 50) / 3, scale), c.rot[1]), c.rot[0]);
 
 	if (angle_difference(0, c.rot[1]) >= 0){
-		draw_set_color(c_teal);
-		draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(5, scale), false);
+		draw_set_color(c_orange);
+		draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(3, scale), false);
 	}
 	
 	draw_sprite_ext(spr_camera, crot, clamp(cx, a[0] + scale_var(10, scale), a[0] + scale_var(110, scale)), clamp(cy, a[3] - scale_var(110, scale), a[3] - scale_var(10, scale)), scale * 0.3, scale * 0.3, c.rot[0], c_white, 1);
 	
 	if (angle_difference(0, c.rot[1]) < 0){
-		draw_set_color(c_teal);
-		draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(5, scale), false);
+		draw_set_color(c_orange);
+		draw_circle(a[0] + scale_var(60, scale), a[3] - scale_var(60, scale), scale_var(3, scale), false);
 	}
 }
 
-//re-enable lighting, and reset alpha to 1 and color to white so things draw correctly in the next step
+//toggles
+draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(190, scale), scale, "Demo", global.demo_mode);
+draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(165, scale), scale, "Lighting", global.use_lighting);
+draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(140, scale), scale, "Texture", global.use_texture);
+
+//reset
+gpu_set_ztestenable(true);
 draw_set_color(c_white);
 draw_set_alpha(1);
 draw_set_lighting(true);
