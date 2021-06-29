@@ -36,6 +36,20 @@ A number of example models have been included to try. The source code for this p
 - **Scale:** Additional scaling to apply to the object before output, which can be useful if there is a disparity between your workspace in Blender and the size of objects in GameMaker. The minimum scale is 0.01.
 - **Output Type:** Choose either between vertex buffers or GML output. Vertex buffers are external files that can be loaded directly into GameMaker at runtime, while GML files should be copied into GameMaker as scripts/functions and used to build the vertex buffer at runtime. It is recommended to only use GML output for debugging, because the resulting scripts can be quite large.
 
+### Tips
+- Both output types currently only support trianglelists, and require a vertex format in GameMaker and use that when loading objects. The format for both is: 
+```gml
+vertex_format_begin();
+	vertex_format_add_position_3d();
+	vertex_format_add_normal();
+	vertex_format_add_color();
+	vertex_format_add_texcoord();
+format = vertex_format_end();
+```
+- If you output your object to GML, a copy of the formatting above is included in a comment at the head of the script.
+- To ensure that objects retain smooth/hard edges in GameMaker, consider setting the object to smooth shading, then using an Edge Split modifier and marking sharp edges where desired. Make sure to export with modifiers applied.
+- Legacy versions of the script, which supported D3D and GML output for GameMaker Studio 1, are available here: https://github.com/massivecatapult/gamemaker-3d-io/tree/main/legacy
+
 ### Example
 A pre-compiled GameMaker Studio 2 executable is available to try, which has a basic 3D world set up and some functions for loading and viewing models under different conditions. It can be found in the [example](https://github.com/massivecatapult/gamemaker-3d-io/tree/main/example) directory. To try out the example for yourself, do the following:
 1. Download the example from the link above
@@ -50,20 +64,6 @@ A pre-compiled GameMaker Studio 2 executable is available to try, which has a ba
    - L: toggle lighting
    - T: toggle texture
    - Escape: close the app
-
-### Tips
-- Both output types currently only support trianglelists, and require a vertex format in GameMaker and use that when loading objects. The format for both is: 
-```gml
-vertex_format_begin();
-	vertex_format_add_position_3d();
-	vertex_format_add_normal();
-	vertex_format_add_color();
-	vertex_format_add_texcoord();
-format = vertex_format_end();
-```
-- If you output your object to GML, a copy of the formatting above is included in a comment at the head of the script.
-- To ensure that objects retain smooth/hard edges in GameMaker, consider setting the object to smooth shading, then using an Edge Split modifier and marking sharp edges where desired. Make sure to export with modifiers applied.
-- Legacy versions of the script, which supported D3D and GML output for GameMaker Studio 1, are available here: https://github.com/massivecatapult/gamemaker-3d-io/tree/main/legacy
 
 ### Roadmap
 Plans for the continued development of this addon include:
