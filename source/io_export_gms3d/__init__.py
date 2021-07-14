@@ -19,7 +19,7 @@
 bl_info = {
     'name': 'GameMaker Studio 2 3D format',
     'author': 'Martin Crownover',
-    "version": (2, 0, 1),
+    "version": (2, 0, 2),
     'blender': (2, 93, 0),
     'location': 'File > Export',
     'description': 'Export as GameMaker Studio 2 3D',
@@ -32,7 +32,6 @@ bl_info = {
 
 import bpy
 import bmesh
-import struct
 from . import export_gm
 
 def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_format, output_type):
@@ -88,39 +87,8 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     bm = bmesh.new()
     bm.from_mesh(mesh)
 
-    output_data = export_gm.get_face_data(bm, flip_uvs, output_format, output_type)
-            
-    if output_type == 'vertex_buffer':
-        # Vertex buffer output - trianglelist
-        output_list = []
-        for p in output_data:
-            output_list.append(struct.pack("fff", p.get("vertices")[0], p.get("vertices")[1], p.get("vertices")[2]))
-            output_list.append(struct.pack("fff", p.get("normals")[0], p.get("normals")[1], p.get("normals")[2]))
-            output_list.append(struct.pack("BBBB", p.get("colors")[0], p.get("colors")[1], p.get("colors")[2], 255))
-            output_list.append(struct.pack("ff", p.get("uvs")[0], p.get("uvs")[1]))
-        output = b"".join(output_list)
-
-    else:
-        # Debug output to GML script - trianglelist
-        output = ""
-        count = 0
-        for p in output_data:
-            if count % 3 == 0:
-                output += "\t\t//triangle " + str(count // 3) + "\n"
-            output += "\t\tvertex_position_3d(buf, " + str(p.get("vertices")[0]) + ", " + str(p.get("vertices")[1]) + ", " + str(p.get("vertices")[2]) + ");\n"
-            output += "\t\tvertex_normal(buf, " + str(p.get("normals")[0]) + ", " + str(p.get("normals")[1]) + ", " + str(p.get("normals")[2]) + ");\n"
-            if p.get("colors")[0] + p.get("colors")[1] + p.get("colors")[2] < 765:
-                output += "\t\tvertex_color(buf, make_color_rgb(" + str(p.get("colors")[0]) + ", " + str(p.get("colors")[1]) + ", " + str(p.get("colors")[2]) + "), 1);\n"
-            else:
-                output += "\t\tvertex_color(buf, c_white, 1);\n"
-            output += "\t\tvertex_texcoord(buf, " + str(p.get("uvs")[0]) + ", " + str(p.get("uvs")[1]) + ");\n"
-            if (count + 1) % 3 == 0:
-                output += "\n"
-            count += 1
-        # Add header and footer to file
-        header = "function load_model(format){\n\n\t/*\n\tuse the following format to load this model:\n\tvertex_format_begin();\n\t\tvertex_format_add_position_3d();\n\t\tvertex_format_add_normal();\n\t\tvertex_format_add_color();\n\t\tvertex_format_add_texcoord();\n\t vertex_format = vertex_format_end();\n\t*/\n\n"
-        output = header + "\tvar buf = vertex_create_buffer();\n\tvertex_begin(buf, format);\n\n" + output
-        output += "\tvertex_end(buf);\n\n\treturn buf;\n}"
+    output_data = export_gm.prepare_data(bm, flip_uvs, output_format)
+    output = export_gm.format_data(output_data, output_format, output_type)
 
     # Delete object copy and bmesh, and reselect original object
     bm.free()
