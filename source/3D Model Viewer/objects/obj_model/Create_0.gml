@@ -1,6 +1,7 @@
 z = 0;
 m = matrix_build_identity();
 r = 0;
+draw_mode = pr_trianglelist;
 
 var b = buffer_load("sphere.buf");
 model = vertex_create_buffer_from_buffer(b, global.vtf);
