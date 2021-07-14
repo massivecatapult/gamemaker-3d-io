@@ -1,7 +1,7 @@
 import bpy
 import bmesh
 
-def get_face_data(bm, flip_uvs):
+def get_face_data(bm, flip_uvs, output_format, output_type):
     """Triangulates a mesh, then returns the vertex, normal, color, and uv data for each triangle in the list"""
 
     # Triangulate

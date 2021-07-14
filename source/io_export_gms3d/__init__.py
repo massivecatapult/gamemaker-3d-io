@@ -19,7 +19,7 @@
 bl_info = {
     'name': 'GameMaker Studio 2 3D format',
     'author': 'Martin Crownover',
-    "version": (2, 0, 0),
+    "version": (2, 0, 1),
     'blender': (2, 93, 0),
     'location': 'File > Export',
     'description': 'Export as GameMaker Studio 2 3D',
@@ -35,7 +35,7 @@ import bmesh
 import struct
 from . import export_gm
 
-def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_type):
+def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_format, output_type):
     """Export the active object as a GameMaker Studio 2 compatible 3D file"""
 
     # Make sure we're in OBJECT mode
@@ -88,7 +88,7 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     bm = bmesh.new()
     bm.from_mesh(mesh)
 
-    output_data = export_gm.get_face_data(bm, flip_uvs)
+    output_data = export_gm.get_face_data(bm, flip_uvs, output_format, output_type)
             
     if output_type == 'vertex_buffer':
         # Vertex buffer output - trianglelist
@@ -187,7 +187,7 @@ class ExportData(Operator, ExportHelper):
     filename_ext = ''
 
     filter_glob: StringProperty(
-        default="*.buf;*.gm;*.gml",
+        default="*.buf;*.gml",
         options={'HIDDEN'},
         maxlen=255,
     )
@@ -224,6 +224,17 @@ class ExportData(Operator, ExportHelper):
         min = 0.01,
         soft_min = 0.01,
     )
+
+    output_format: EnumProperty(
+        name = "Output Format",
+        description="The format of the model to output",
+        items = (
+            ('triangle_list', "Triangle List", "Format the model as a triangle list"),
+            ('line_list', "Line List", "Format the model as a line list"),
+            ('point_list', "Point List", "Format the model as a point list"),
+        ),
+        default = 'triangle_list'
+    )
     
     output_type: EnumProperty(
         name = "Output Type",
@@ -254,6 +265,7 @@ class ExportData(Operator, ExportHelper):
             self.flip_y,
             self.flip_uvs,
             self.scale_modifier,
+            self.output_format,
             self.output_type
         )
 
