@@ -24,7 +24,7 @@ bl_info = {
     'location': 'File > Export',
     'description': 'Export as GameMaker Studio 2 3D',
     'warning': '',
-    'doc_url': "https://martincrownover.com/blender-addon-gm3d/",
+    'doc_url': "https://github.com/massivecatapult/gamemaker-3d-io#readme",
     'tracker_url': "https://github.com/massivecatapult/gamemaker-3d-io",
     'support': 'OFFICIAL',
     'category': 'Import-Export',
@@ -32,7 +32,8 @@ bl_info = {
 
 import bpy
 import bmesh
-from . import export_gm
+from . import gm3d_prep
+from . import gm3d_output
 
 def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_format, output_type):
     """Export the active object as a GameMaker Studio 2 compatible 3D file"""
@@ -87,8 +88,8 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     bm = bmesh.new()
     bm.from_mesh(mesh)
 
-    output_data = export_gm.prepare_data(bm, flip_uvs, output_format)
-    output = export_gm.format_data(output_data, output_format, output_type)
+    output_data = gm3d_prep.prep_mesh_data(bm, flip_uvs, output_format)
+    output = gm3d_output.format_output(output_data, output_format, output_type)
 
     # Delete object copy and bmesh, and reselect original object
     bm.free()
