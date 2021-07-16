@@ -29,21 +29,30 @@ A number of example models have been included to try. The source code for this p
    - For GML output, open the file, copy and paste the function into a GameMaker project, then call it in your game to build the model
 
 ### Export Options
+- **Format:** Choose to output the model as a Triangle List, a Line List, or a Point List. Line lists and point lists can only be a single color, and a new option to choose the color will appear if those formats are selected.
+- **Vertex Color:** This option only appears if the output format is set to Line List or Point List. This color will determine the color the entire set of lines/points will draw when used in GameMaker.
 - **Use World Origin:** If selected, the object's position will be applied before it is output, which will set the object's origin to the world origin. If unselected, the object will retain its original origin point.
-- **Apply Modifiers:** If selected, the object's modifiers will be applied to the model before it is output, which will make the output retain the same appearance as in Blender.
 - **Flip On Y:** Flips/mirrors the object's Y coordinates before it is output. This action will pivot around the object's origin, which will also be the world origin if **Use World Origin** is selected. This can help ensure that the object looks correct in GameMaker's 3D view.
 - **Flip UV Coordinates:** Flips the object's UV coordinates (on Y), which can help ensure that textures draw properly once in GameMaker.
+- **Apply Modifiers:** If selected, the object's modifiers will be applied to the model before it is output, which will make the output retain the same appearance as in Blender.
 - **Scale:** Additional scaling to apply to the object before output, which can be useful if there is a disparity between your workspace in Blender and the size of objects in GameMaker. The minimum scale is 0.01.
-- **Output Type:** Choose either between vertex buffers or GML output. Vertex buffers are external files that can be loaded directly into GameMaker at runtime, while GML files should be copied into GameMaker as scripts/functions and used to build the vertex buffer at runtime. It is recommended to only use GML output for debugging, because the resulting scripts can be quite large.
+- **Type:** Choose between vertex buffers or GML output. Vertex buffers are external files that can be loaded directly into GameMaker at runtime, while GML files should be copied into GameMaker as scripts/functions and used to build the vertex buffer at runtime. It is recommended to only use GML output for debugging, because the resulting scripts can be quite large.
 
 ### Tips
-- Both output types currently only support trianglelists, and require a vertex format in GameMaker and use that when loading objects. The format for both is: 
+- GameMaker requires a vertex format to use that when loading objects. The format for triangle lists is: 
 ```gml
 vertex_format_begin();
 	vertex_format_add_position_3d();
 	vertex_format_add_normal();
 	vertex_format_add_color();
 	vertex_format_add_texcoord();
+format = vertex_format_end();
+```
+- The format for line lists and point lists is:
+```gml
+vertex_format_begin();
+	vertex_format_add_position_3d();
+	vertex_format_add_color();
 format = vertex_format_end();
 ```
 - If you output your object to GML, a copy of the formatting above is included in a comment at the head of the script.
@@ -59,16 +68,17 @@ A pre-compiled GameMaker Studio 2 executable is available to try, which has a ba
    - Middle Mouse + Shift: pan the view
    - Middle Mouse + Ctrl/Mouse Wheel: zoom the view
    - Numpad 0: reset the position of the view
-   - M: load a new model for viewing
+   - M: load a new model for viewing (you will be asked to confirm the model format after selecting a file)
    - D: set the model to "demo mode", which will have it rotate around all axis
    - L: toggle lighting
+   - C: toggle culling
    - T: toggle texture
    - Escape: close the app
 
 ### Roadmap
 Plans for the continued development of this addon include:
-- Support for linelist output
-- Support for pointlist output
+- ~~Support for linelist output~~
+- ~~Support for pointlist output~~
 - Ability to disable some types of data in the output, such as normals and UV data
-- Additional options for viewing models in the example project, such as toggling culling or loading a custom preview texture
+- Additional options for viewing models in the example project, ~~such as toggling culling~~ or loading a custom preview texture
 - Cleanup pass on code in example project (since this code was co-opted from another project, there's still a little cruft leftover)
