@@ -77,8 +77,6 @@ A pre-compiled GameMaker Studio 2 executable is available to try, which has a ba
 
 ### Roadmap
 Plans for the continued development of this addon include:
-- ~~Support for linelist output~~
-- ~~Support for pointlist output~~
 - Ability to disable some types of data in the output, such as normals and UV data
-- Additional options for viewing models in the example project, ~~such as toggling culling~~ or loading a custom preview texture
+- Additional options for viewing models in the example project, such as loading a custom preview texture
 - Cleanup pass on code in example project (since this code was co-opted from another project, there's still a little cruft leftover)
