@@ -19,7 +19,7 @@
 bl_info = {
     'name': 'GameMaker Studio 2 3D format',
     'author': 'Martin Crownover',
-    "version": (2, 0, 2),
+    "version": (2, 1, 0),
     'blender': (2, 93, 0),
     'location': 'File > Export',
     'description': 'Export as GameMaker Studio 2 3D',
@@ -35,7 +35,7 @@ import bmesh
 from . import gm3d_prep
 from . import gm3d_output
 
-def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, output_format, output_type):
+def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, flip_uvs, scale_modifier, vertex_color_override, output_format, output_type):
     """Export the active object as a GameMaker Studio 2 compatible 3D file"""
 
     # Make sure we're in OBJECT mode
@@ -88,7 +88,7 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     bm = bmesh.new()
     bm.from_mesh(mesh)
 
-    output_data = gm3d_prep.prep_mesh_data(bm, flip_uvs, output_format)
+    output_data = gm3d_prep.prep_mesh_data(bm, flip_uvs, vertex_color_override, output_format)
     output = gm3d_output.format_output(output_data, output_format, output_type)
 
     # Delete object copy and bmesh, and reselect original object
@@ -108,8 +108,8 @@ def export_gm3d(context, filepath, use_world_origin, apply_modifiers, flip_y, fl
     return {'FINISHED'}
 
 from bpy_extras.io_utils import ExportHelper
-from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
-from bpy.types import Operator
+from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty, FloatVectorProperty
+from bpy.types import Operator, Panel
 
 def align_output_format(filepath, output_type):
     """Format filename appropriately to the selected output type"""
@@ -148,17 +148,16 @@ def update_ext(self, context):
         self.output_type,
     )
 
-class ExportData(Operator, ExportHelper):
+class ExportGM3D(Operator, ExportHelper):
     """Export the active object to the selected GameMaker 3D format"""
     bl_idname = "export.gml"
     bl_label = "Export"
     
     filename_ext = ''
-
     filter_glob: StringProperty(
-        default="*.buf;*.gml",
-        options={'HIDDEN'},
-        maxlen=255,
+        default = "*.buf;*.gml",
+        options = {'HIDDEN'},
+        maxlen = 255,
     )
 
     # Operator properties
@@ -194,19 +193,32 @@ class ExportData(Operator, ExportHelper):
         soft_min = 0.01,
     )
 
+    vertex_color_override: FloatVectorProperty(
+        name = "Vertex color",
+        description = "Multiply or set vertex colors to this color",
+        default = (1.0, 1.0, 1.0),
+        min = 0.0,
+        max = 1.0,
+        precision = 3,
+        soft_min = 0.0,
+        soft_max = 1.0,
+        subtype = 'COLOR',
+        size = 3,
+    )
+
     output_format: EnumProperty(
-        name = "Output Format",
+        name = "Format",
         description="The format of the model to output",
         items = (
             ('triangle_list', "Triangle List", "Format the model as a triangle list"),
             ('line_list', "Line List", "Format the model as a line list"),
             ('point_list', "Point List", "Format the model as a point list"),
         ),
-        default = 'triangle_list'
+        default = 'triangle_list',
     )
-    
+
     output_type: EnumProperty(
-        name = "Output Type",
+        name = "Type",
         description="The type of data to output",
         items = (
             ('vertex_buffer', "Vertex Buffer", "A vertex buffer that can be loaded into GameMaker at runtime"),
@@ -215,8 +227,8 @@ class ExportData(Operator, ExportHelper):
         default = 'vertex_buffer',
         update = update_ext,
     )
-    
-    def check(self, _context):
+
+    def check(self, context):
         # Force the filename to update appropriately
         old_filepath = self.filepath
         self.filepath = align_output_format(
@@ -234,20 +246,46 @@ class ExportData(Operator, ExportHelper):
             self.flip_y,
             self.flip_uvs,
             self.scale_modifier,
+            self.vertex_color_override,
             self.output_format,
             self.output_type
         )
+    
+    def draw(self, context):
+        layout = self.layout
+
+        sfile = context.space_data
+        operator = sfile.active_operator
+
+        layout.prop(operator, "output_format")
+        if self.output_format != 'triangle_list':
+            layout.prop(operator, "vertex_color_override")
+
+        layout.label(text = "Transform:")
+        box = layout.box()
+        box.prop(operator, "use_world_origin")
+        box.prop(operator, "flip_y")
+        box.prop(operator, "apply_modifiers")
+        box.prop(operator, "scale_modifier")
+
+        layout.prop(operator, "output_type")
 
 # Only needed if you want to add into a dynamic menu
 def menu_func_export(self, context):
-    self.layout.operator(ExportData.bl_idname, text="GameMaker 3D (.buf, .gml)")
+    self.layout.operator(ExportGM3D.bl_idname, text="GameMaker 3D (.buf, .gml)")
+
+classes = (
+    ExportGM3D,
+)
 
 def register():
-    bpy.utils.register_class(ExportData)
+    for cls in classes:
+        bpy.utils.register_class(cls)
     bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 def unregister():
-    bpy.utils.unregister_class(ExportData)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
     bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
