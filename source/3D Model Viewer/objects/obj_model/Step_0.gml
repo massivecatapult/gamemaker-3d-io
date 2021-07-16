@@ -23,6 +23,14 @@ if (keyboard_check_pressed(ord("D"))){
 	}
 }
 
+if (keyboard_check_pressed(ord("C"))){
+	if (global.use_culling){
+		global.use_culling = false;
+	} else {
+		global.use_culling = true;
+	}
+}
+
 if (keyboard_check_pressed(ord("M"))){
 	event_user(0);
 }

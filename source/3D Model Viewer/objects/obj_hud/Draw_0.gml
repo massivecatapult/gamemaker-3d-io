@@ -84,8 +84,9 @@ if (instance_exists(obj_camera)){
 }
 
 //toggles
-draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(190, scale), scale, "Demo", global.demo_mode);
-draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(165, scale), scale, "Lighting", global.use_lighting);
+draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(215, scale), scale, "Demo", global.demo_mode);
+draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(190, scale), scale, "Lighting", global.use_lighting);
+draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(165, scale), scale, "Culling", global.use_culling);
 draw_toggle(a[0] + scale_var(10, scale), a[3] - scale_var(140, scale), scale, "Texture", global.use_texture);
 
 //reset

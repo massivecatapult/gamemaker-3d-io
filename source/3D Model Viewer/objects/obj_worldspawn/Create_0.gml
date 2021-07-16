@@ -4,6 +4,7 @@ global.model_name = "Default (sphere.buf)";
 global.demo_mode = false;
 global.use_texture = false;
 global.use_lighting = true;
+global.use_culling = true;
 
 vertex_format_begin();
 	vertex_format_add_position_3d();
