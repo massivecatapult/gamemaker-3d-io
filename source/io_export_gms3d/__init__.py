@@ -19,7 +19,7 @@
 bl_info = {
     'name': 'GameMaker Studio 2 3D format',
     'author': 'Martin Crownover',
-    "version": (2, 1, 0),
+    "version": (2, 1, 2),
     'blender': (2, 93, 0),
     'location': 'File > Export',
     'description': 'Export as GameMaker Studio 2 3D',
@@ -194,7 +194,7 @@ class ExportGM3D(Operator, ExportHelper):
     )
 
     vertex_color_override: FloatVectorProperty(
-        name = "Vertex color",
+        name = "Vertex Color",
         description = "Multiply or set vertex colors to this color",
         default = (1.0, 1.0, 1.0),
         min = 0.0,
@@ -265,6 +265,7 @@ class ExportGM3D(Operator, ExportHelper):
         box = layout.box()
         box.prop(operator, "use_world_origin")
         box.prop(operator, "flip_y")
+        box.prop(operator, "flip_uvs")
         box.prop(operator, "apply_modifiers")
         box.prop(operator, "scale_modifier")
 
