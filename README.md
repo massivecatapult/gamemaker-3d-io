@@ -11,7 +11,7 @@ This addon is a work-in-progress; thanks for your patience!
 - gamemaker-3d-io is an easy way to get objects from Blender to GameMaker Studio 2, using GameMaker's native buffer format
 - Objects can alternatively be exported to a GML script for importing/debugging
 - Exports models with normals, vertex colors, and UV coordinates included
-- Supports any model which can be broken into triangle lists - support for line lists and point lists is planned for the future
+- Exports models as triangle lists, line lists, or point lists
 
 A number of example models have been included to try. The source code for this project is also available [here](https://github.com/massivecatapult/gamemaker-3d-io/tree/main/source/3D%20Model%20Viewer).
 
